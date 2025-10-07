@@ -222,9 +222,11 @@ public static class FsrsAlgorithm
     {
         if (!enableFuzz || interval < 2.5) return interval;
 
-        // Apply ±5% fuzz
-        Random random = new Random();
-        double fuzzFactor = 0.95 + random.NextDouble() * 0.1; // 0.95 to 1.05
+        // Apply ±5% fuzz using a static Random instance to avoid predictable values
+        double fuzzFactor = 0.95 + _random.NextDouble() * 0.1; // 0.95 to 1.05
         return interval * fuzzFactor;
     }
+
+    // Static Random instance to ensure proper randomization across rapid calls
+    private static readonly Random _random = new Random();
 }

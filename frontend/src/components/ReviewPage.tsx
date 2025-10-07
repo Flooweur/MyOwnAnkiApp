@@ -136,7 +136,7 @@ const ReviewPage: React.FC = () => {
         </button>
         <div className="card-stats">
           <span>Reviews: {currentCard.reviewCount}</span>
-          <span>Difficulty: {(currentCard.difficulty / 10).toFixed(2)}</span>
+          <span>Difficulty: {currentCard.difficulty > 0 ? (currentCard.difficulty / 10).toFixed(2) : 'N/A'}</span>
         </div>
       </div>
 

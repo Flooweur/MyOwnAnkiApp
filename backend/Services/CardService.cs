@@ -61,7 +61,7 @@ public class CardService : ICardService
             Difficulty = 5, // Default difficulty
             Retrievability = 1,
             CreatedAt = DateTime.UtcNow,
-            DueDate = DateTime.UtcNow // New cards are immediately available
+            DueDate = null // New cards have no due date until first review
         };
 
         _context.Cards.Add(card);
