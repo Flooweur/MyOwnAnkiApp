@@ -1,48 +1,79 @@
 .home-page {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
 /* Drop zone styles */
 .drop-zone {
-  background: rgba(255, 255, 255, 0.95);
-  border: 3px dashed #ccc;
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-color);
   border-radius: 16px;
   padding: 3rem;
   text-align: center;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-bottom: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.drop-zone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.drop-zone:hover::before {
+  opacity: 0.05;
+}
+
+.drop-zone > * {
+  position: relative;
+  z-index: 1;
 }
 
 .drop-zone:hover {
-  border-color: #667eea;
+  border-color: var(--accent-primary);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+  box-shadow: var(--shadow-glow);
 }
 
 .drop-zone.drag-active {
-  border-color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  transform: scale(1.02);
+  border-color: var(--accent-primary);
+  background: var(--bg-tertiary);
+  transform: scale(1.01);
+  box-shadow: var(--shadow-glow);
+}
+
+.drop-zone.drag-active::before {
+  opacity: 0.1;
 }
 
 .drop-zone.uploading {
-  border-color: #667eea;
+  border-color: var(--accent-primary);
   cursor: wait;
 }
 
 .drop-zone-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
+  filter: grayscale(0.3) brightness(1.2);
 }
 
 .drop-zone h2 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 .drop-zone p {
-  color: #666;
+  color: var(--text-muted);
   margin: 1rem 0;
 }
 
@@ -56,18 +87,24 @@
 
 .file-input-button {
   display: inline-block;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
-  padding: 0.75rem 2rem;
-  border-radius: 8px;
+  padding: 0.875rem 2rem;
+  border-radius: 12px;
   cursor: pointer;
   font-weight: 600;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .file-input-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: var(--shadow-glow);
+}
+
+.file-input-button:active {
+  transform: translateY(0);
 }
 
 /* Upload status */
@@ -80,15 +117,16 @@
 
 /* Error message */
 .error-message {
-  background: #fee;
-  border: 2px solid #fcc;
-  border-radius: 8px;
-  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--color-again);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
   margin-bottom: 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #c33;
+  color: #fca5a5;
+  backdrop-filter: blur(10px);
 }
 
 .error-message button {
@@ -96,63 +134,72 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #c33;
+  color: #fca5a5;
   padding: 0 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.error-message button:hover {
+  transform: scale(1.1);
 }
 
 /* Deck list section */
 .deck-list-section {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-secondary);
   border-radius: 16px;
   padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
 }
 
 .deck-list-section h2 {
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 1.5rem;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
 /* Empty state */
 .empty-state {
   text-align: center;
-  padding: 3rem 1rem;
-  color: #666;
+  padding: 4rem 1rem;
+  color: var(--text-muted);
 }
 
 .empty-state-icon {
   font-size: 4rem;
   margin-bottom: 1rem;
+  opacity: 0.5;
 }
 
 .empty-state h3 {
-  color: #333;
+  color: var(--text-secondary);
   margin-bottom: 0.5rem;
+  font-weight: 600;
 }
 
 /* Loading state */
 .loading-state {
   text-align: center;
   padding: 3rem 1rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 /* Deck grid */
 .deck-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 1.5rem;
 }
 
 /* Spinner animation */
 .spinner {
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #667eea;
+  border: 3px solid var(--bg-hover);
+  border-top: 3px solid var(--accent-primary);
   border-radius: 50%;
   width: 40px;
   height: 40px;
-  animation: spin 1s linear infinite;
+  animation: spin 0.8s linear infinite;
   margin: 0 auto;
 }
 
@@ -173,5 +220,9 @@
 
   .deck-grid {
     grid-template-columns: 1fr;
+  }
+
+  .deck-list-section {
+    padding: 1.5rem;
   }
 }

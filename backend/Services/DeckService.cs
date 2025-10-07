@@ -41,7 +41,7 @@ public class DeckService : IDeckService
             NewCards = deck.Cards.Count(c => c.State == CardState.New),
             LearningCards = deck.Cards.Count(c => c.State == CardState.Learning),
             ReviewCards = deck.Cards.Count(c => c.State == CardState.Review),
-            MasteredCards = deck.Cards.Count(c => c.Stability > 100), // Cards with stability > 100 days are "mastered"
+            MasteredCards = deck.Cards.Count(c => c.Stability > FSRS.FsrsConstants.MasteredStabilityThreshold),
             DueToday = deck.Cards.Count(c => c.DueDate.HasValue && c.DueDate.Value.Date <= today)
         }).ToList();
     }

@@ -28,6 +28,7 @@ builder.Services.AddScoped<IFsrsService, FsrsService>();
 builder.Services.AddScoped<IApkgParserService, ApkgParserService>();
 builder.Services.AddScoped<IDeckService, DeckService>();
 builder.Services.AddScoped<ICardService, CardService>();
+builder.Services.AddScoped<IStatsService, StatsService>();
 
 // Configure CORS to allow React frontend
 builder.Services.AddCors(options =>

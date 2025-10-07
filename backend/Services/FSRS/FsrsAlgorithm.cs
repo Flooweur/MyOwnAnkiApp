@@ -21,7 +21,7 @@ public static class FsrsAlgorithm
         if (stability <= 0) return 0;
         
         // FSRS-6 forgetting curve: R = (1 + (t/(9*S))^w20)^-1
-        double exponent = Math.Pow(elapsedDays / (9.0 * stability), w20);
+        double exponent = Math.Pow(elapsedDays / (FsrsConstants.RetrievabilityFactor * stability), w20);
         return Math.Pow(1.0 + exponent, -1.0);
     }
 
@@ -39,8 +39,8 @@ public static class FsrsAlgorithm
         // Formula: I = S * (ln(DR) / ln(0.9))
         if (desiredRetention >= 1.0) return stability;
         
-        double interval = stability * (Math.Log(desiredRetention) / Math.Log(0.9));
-        return Math.Max(1, interval); // Minimum interval of 1 day
+        double interval = stability * (Math.Log(desiredRetention) / Math.Log(FsrsConstants.DefaultRequestRetention));
+        return Math.Max(FsrsConstants.MinInterval, interval);
     }
 
     /// <summary>
@@ -74,15 +74,15 @@ public static class FsrsAlgorithm
     public static double CalculateInitialDifficulty(int grade, FsrsParameters parameters)
     {
         // Formula: D0 = w4 - w5 * (G - 3)
-        double difficulty = parameters.Weights[4] - parameters.Weights[5] * (grade - 3);
+        double difficulty = parameters.Weights[4] - parameters.Weights[5] * (grade - FsrsConstants.GradeGood);
         
         // Clamp to valid range [1, 10]
-        return Math.Clamp(difficulty, 1.0, 10.0);
+        return Math.Clamp(difficulty, FsrsConstants.MinDifficulty, FsrsConstants.MaxDifficulty);
     }
 
     /// <summary>
     /// Updates difficulty after a review
-    /// Applies grade-based change with linear damping and mean reversion
+    /// FSRS-6 Formula: D' = D - w6 * (G - 3), then apply mean reversion
     /// </summary>
     /// <param name="currentDifficulty">Current difficulty value</param>
     /// <param name="grade">Review grade (1=Again, 2=Hard, 3=Good, 4=Easy)</param>
@@ -90,19 +90,13 @@ public static class FsrsAlgorithm
     /// <returns>Updated difficulty value</returns>
     public static double UpdateDifficulty(double currentDifficulty, int grade, FsrsParameters parameters)
     {
-        // Calculate difficulty change based on grade
-        double difficultyChange = grade switch
-        {
-            1 => parameters.Weights[5],  // Again: add a lot
-            2 => parameters.Weights[6],  // Hard: add a little
-            3 => 0,                       // Good: no change
-            4 => -parameters.Weights[6], // Easy: subtract a little
-            _ => 0
-        };
-
-        // Apply linear damping: as D approaches 10, changes get smaller
-        // This prevents D from ever reaching exactly 10
-        double nextDifficulty = currentDifficulty + difficultyChange * (10 - currentDifficulty) / 10.0;
+        // FSRS-6 difficulty update: D' = D - w6 * (G - 3)
+        // This means:
+        // - Again (G=1): D' = D - w6 * (-2) = D + 2*w6 (increase)
+        // - Hard (G=2): D' = D - w6 * (-1) = D + w6 (increase)
+        // - Good (G=3): D' = D - w6 * 0 = D (no change)
+        // - Easy (G=4): D' = D - w6 * 1 = D - w6 (decrease)
+        double nextDifficulty = currentDifficulty - parameters.Weights[6] * (grade - FsrsConstants.GradeGood);
 
         // Apply mean reversion towards default difficulty (w4)
         // Formula: D'' = w7 * D0 + (1 - w7) * D'
@@ -110,7 +104,7 @@ public static class FsrsAlgorithm
                         (1 - parameters.Weights[7]) * nextDifficulty;
 
         // Clamp to valid range [1, 10]
-        return Math.Clamp(nextDifficulty, 1.0, 10.0);
+        return Math.Clamp(nextDifficulty, FsrsConstants.MinDifficulty, FsrsConstants.MaxDifficulty);
     }
 
     /// <summary>
@@ -220,10 +214,11 @@ public static class FsrsAlgorithm
     /// <returns>Fuzzed interval</returns>
     public static double ApplyFuzz(double interval, bool enableFuzz)
     {
-        if (!enableFuzz || interval < 2.5) return interval;
+        if (!enableFuzz || interval < FsrsConstants.MinFuzzInterval) return interval;
 
         // Apply ±5% fuzz using a static Random instance to avoid predictable values
-        double fuzzFactor = 0.95 + _random.NextDouble() * 0.1; // 0.95 to 1.05
+        double fuzzRange = FsrsConstants.MaxFuzzFactor - FsrsConstants.MinFuzzFactor;
+        double fuzzFactor = FsrsConstants.MinFuzzFactor + _random.NextDouble() * fuzzRange;
         return interval * fuzzFactor;
     }
 

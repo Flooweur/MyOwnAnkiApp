@@ -76,8 +76,10 @@ public class CardService : ICardService
     public async Task<Card> ReviewCardAsync(int cardId, int grade)
     {
         // Validate grade
-        if (grade < 1 || grade > 4)
-            throw new ArgumentException("Grade must be between 1 (Again) and 4 (Easy)", nameof(grade));
+        if (grade < FSRS.FsrsConstants.MinGrade || grade > FSRS.FsrsConstants.MaxGrade)
+            throw new ArgumentException(
+                $"Grade must be between {FSRS.FsrsConstants.MinGrade} (Again) and {FSRS.FsrsConstants.MaxGrade} (Easy)", 
+                nameof(grade));
 
         var card = await _context.Cards
             .Include(c => c.Deck)

@@ -103,6 +103,13 @@ const HomePage: React.FC = () => {
   };
 
   /**
+   * Navigates to the stats page for a deck
+   */
+  const handleViewStats = (deckId: number) => {
+    navigate(`/stats/${deckId}`);
+  };
+
+  /**
    * Deletes a deck
    */
   const handleDeleteDeck = async (deckId: number, deckName: string) => {
@@ -183,6 +190,7 @@ const HomePage: React.FC = () => {
                 deck={deck}
                 onClick={() => handleDeckClick(deck.id)}
                 onDelete={() => handleDeleteDeck(deck.id, deck.name)}
+                onViewStats={() => handleViewStats(deck.id)}
               />
             ))}
           </div>
