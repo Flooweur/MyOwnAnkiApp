@@ -100,8 +100,9 @@ public class CardsController : ControllerBase
         try
         {
             // Validate grade
-            if (request.Grade < 1 || request.Grade > 4)
-                return BadRequest("Grade must be between 1 (Again) and 4 (Easy)");
+            if (request.Grade < Services.FSRS.FsrsConstants.MinGrade || 
+                request.Grade > Services.FSRS.FsrsConstants.MaxGrade)
+                return BadRequest($"Grade must be between {Services.FSRS.FsrsConstants.MinGrade} (Again) and {Services.FSRS.FsrsConstants.MaxGrade} (Easy)");
 
             _logger.LogInformation("Reviewing card {CardId} with grade {Grade}", id, request.Grade);
 

@@ -6,18 +6,27 @@ interface DeckCardProps {
   deck: DeckWithStats;
   onClick: () => void;
   onDelete: () => void;
+  onViewStats: () => void;
 }
 
 /**
  * Card component displaying deck information and statistics
  */
-const DeckCard: React.FC<DeckCardProps> = ({ deck, onClick, onDelete }) => {
+const DeckCard: React.FC<DeckCardProps> = ({ deck, onClick, onDelete, onViewStats }) => {
   /**
    * Handles delete button click without triggering card click
    */
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete();
+  };
+
+  /**
+   * Handles stats button click without triggering card click
+   */
+  const handleStatsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onViewStats();
   };
 
   /**
@@ -79,7 +88,12 @@ const DeckCard: React.FC<DeckCardProps> = ({ deck, onClick, onDelete }) => {
 
       <div className="deck-footer">
         <span className="deck-date">Updated {formatDate(deck.updatedAt)}</span>
-        <span className="study-button">Study →</span>
+        <div className="deck-actions">
+          <button className="stats-button" onClick={handleStatsClick} title="View statistics">
+            📊
+          </button>
+          <span className="study-button">Study →</span>
+        </div>
       </div>
     </div>
   );

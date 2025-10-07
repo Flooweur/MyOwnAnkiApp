@@ -1,18 +1,44 @@
 .deck-card {
-  background: white;
-  border-radius: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 16px;
   padding: 1.5rem;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.deck-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.deck-card:hover::before {
+  opacity: 0.05;
+}
+
+.deck-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .deck-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--accent-primary);
 }
 
 .deck-card-header {
@@ -23,32 +49,35 @@
 }
 
 .deck-name {
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.25rem;
   flex: 1;
   word-break: break-word;
+  font-weight: 600;
 }
 
 .delete-button {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0.25rem;
-  opacity: 0.5;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  padding: 0.5rem;
+  opacity: 0.6;
+  transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .delete-button:hover {
   opacity: 1;
-  transform: scale(1.1);
+  background: rgba(239, 68, 68, 0.2);
+  transform: scale(1.05);
 }
 
 .deck-description {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .deck-stats {
@@ -56,8 +85,8 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem 0;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .stat-row {
@@ -68,41 +97,51 @@
 
 .stat {
   text-align: center;
+  padding: 0.5rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.deck-card:hover .stat {
+  border-color: rgba(124, 58, 237, 0.3);
 }
 
 .stat-value {
   font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .stat-label {
-  font-size: 0.75rem;
-  color: #666;
+  font-size: 0.7rem;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 0.25rem;
+  font-weight: 500;
 }
 
 /* Stat color variations */
 .stat-new {
-  color: #667eea;
+  color: var(--color-new);
 }
 
 .stat-learning {
-  color: #f59e0b;
+  color: var(--color-learning);
 }
 
 .stat-review {
-  color: #3b82f6;
+  color: var(--color-review);
 }
 
 .stat-mastered {
-  color: #10b981;
+  color: var(--color-mastered);
 }
 
 .stat-due {
-  color: #ef4444;
+  color: var(--color-due);
 }
 
 .deck-footer {
@@ -113,17 +152,42 @@
 }
 
 .deck-date {
-  color: #999;
+  color: var(--text-muted);
+}
+
+.deck-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stats-button {
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.375rem 0.625rem;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.stats-button:hover {
+  opacity: 1;
+  background: rgba(124, 58, 237, 0.2);
+  transform: scale(1.05);
 }
 
 .study-button {
-  color: #667eea;
+  color: var(--accent-secondary);
   font-weight: 600;
-  transition: transform 0.2s ease;
+  transition: all 0.2s ease;
+  padding: 0.25rem 0.5rem;
 }
 
 .deck-card:hover .study-button {
   transform: translateX(4px);
+  color: var(--accent-primary);
 }
 
 /* Responsive design */
@@ -133,6 +197,10 @@
   }
 
   .stat-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
+  }
+  
+  .deck-card {
+    padding: 1.25rem;
   }
 }

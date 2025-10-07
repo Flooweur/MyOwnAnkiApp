@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { DeckWithStats, Card, ReviewResponse, NextCardResponse } from './types';
+import { DeckWithStats, Card, ReviewResponse, NextCardResponse, DailyStats, RetentionStats, DeckOverviewStats } from './types';
 
 // API base URL - will use proxy in development
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
@@ -59,6 +59,30 @@ export const apiService = {
     const response = await api.post<ReviewResponse>(`/cards/${cardId}/review`, {
       grade,
     });
+    return response.data;
+  },
+
+  /**
+   * Gets daily statistics for a deck
+   */
+  async getDailyStats(deckId: number, days: number = 30): Promise<DailyStats[]> {
+    const response = await api.get<DailyStats[]>(`/stats/deck/${deckId}/daily?days=${days}`);
+    return response.data;
+  },
+
+  /**
+   * Gets retention statistics for a deck
+   */
+  async getRetentionStats(deckId: number): Promise<RetentionStats> {
+    const response = await api.get<RetentionStats>(`/stats/deck/${deckId}/retention`);
+    return response.data;
+  },
+
+  /**
+   * Gets deck overview statistics
+   */
+  async getDeckOverview(deckId: number): Promise<DeckOverviewStats> {
+    const response = await api.get<DeckOverviewStats>(`/stats/deck/${deckId}/overview`);
     return response.data;
   },
 };
