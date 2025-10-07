@@ -147,31 +147,123 @@ public class ApkgParserService : IApkgParserService
                 }
             }
 
-            // Get cards from notes table
-            // Anki stores card content in the 'notes' table with fields separated by \x1f
-            using (var cmd = new SQLiteCommand("SELECT flds FROM notes", connection))
-            using (var reader = cmd.ExecuteReader())
+            // If no deck name found, try to get it from the cards table
+            if (string.IsNullOrEmpty(parsedDeck.Name))
             {
-                while (reader.Read())
+                using (var cmd = new SQLiteCommand("SELECT DISTINCT did FROM cards LIMIT 1", connection))
                 {
-                    var fields = reader.GetString(0).Split('\x1f');
-                    
-                    if (fields.Length >= 2)
+                    var deckId = cmd.ExecuteScalar();
+                    if (deckId != null)
                     {
-                        cards.Add(new ParsedCard
+                        // Try to get deck name from the decks JSON using the deck ID
+                        using (var deckCmd = new SQLiteCommand("SELECT decks FROM col LIMIT 1", connection))
                         {
-                            Front = fields[0],
-                            Back = fields[1]
-                        });
+                            var decksJson = deckCmd.ExecuteScalar()?.ToString();
+                            if (!string.IsNullOrEmpty(decksJson))
+                            {
+                                var deckIdStr = deckId.ToString();
+                                var nameMatch = Regex.Match(decksJson, $@"""{deckIdStr}""\s*:\s*{{[^}}]*""name""\s*:\s*""([^""]+)""");
+                                if (nameMatch.Success)
+                                {
+                                    parsedDeck.Name = nameMatch.Groups[1].Value;
+                                }
+                            }
+                        }
                     }
-                    else if (fields.Length == 1)
+                }
+            }
+
+            // Try to get cards by joining notes and cards tables first
+            // Anki stores actual card content in the 'notes' table with fields separated by \x1f
+            // The 'cards' table contains card instances that reference notes via nid
+            var query = @"
+                SELECT n.flds, c.did 
+                FROM notes n 
+                INNER JOIN cards c ON n.id = c.nid 
+                WHERE n.flds IS NOT NULL AND n.flds != ''
+                ORDER BY c.id";
+
+            try
+            {
+                using (var cmd = new SQLiteCommand(query, connection))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    int totalRows = 0;
+                    int skippedRows = 0;
+                    
+                    while (reader.Read())
                     {
-                        // Single field cards - use same content for front and back
-                        cards.Add(new ParsedCard
+                        totalRows++;
+                        var fields = reader.GetString(0).Split('\x1f');
+                        
+                        // Skip system messages and empty cards
+                        if (fields.Length == 0 || 
+                            (fields.Length == 1 && fields[0].Contains("Please update to the latest Anki version")))
                         {
-                            Front = fields[0],
-                            Back = fields[0]
-                        });
+                            skippedRows++;
+                            continue;
+                        }
+                        
+                        if (fields.Length >= 2)
+                        {
+                            cards.Add(new ParsedCard
+                            {
+                                Front = fields[0],
+                                Back = fields[1]
+                            });
+                        }
+                        else if (fields.Length == 1)
+                        {
+                            // Single field cards - use same content for front and back
+                            cards.Add(new ParsedCard
+                            {
+                                Front = fields[0],
+                                Back = fields[0]
+                            });
+                        }
+                    }
+                    
+                    // Log debugging information
+                    Console.WriteLine($"Total rows processed: {totalRows}, Skipped: {skippedRows}, Cards added: {cards.Count}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error with JOIN query: {ex.Message}");
+                
+                // Fallback: try to get cards directly from notes table
+                // This is less accurate but might work for some Anki versions
+                using (var cmd = new SQLiteCommand("SELECT flds FROM notes WHERE flds IS NOT NULL AND flds != ''", connection))
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var fields = reader.GetString(0).Split('\x1f');
+                        
+                        // Skip system messages and empty cards
+                        if (fields.Length == 0 || 
+                            (fields.Length == 1 && fields[0].Contains("Please update to the latest Anki version")))
+                        {
+                            continue;
+                        }
+                        
+                        if (fields.Length >= 2)
+                        {
+                            cards.Add(new ParsedCard
+                            {
+                                Front = fields[0],
+                                Back = fields[1]
+                            });
+                        }
+                        else if (fields.Length == 1)
+                        {
+                            // Single field cards - use same content for front and back
+                            cards.Add(new ParsedCard
+                            {
+                                Front = fields[0],
+                                Back = fields[0]
+                            });
+                        }
                     }
                 }
             }

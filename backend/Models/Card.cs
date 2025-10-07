@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace FlashcardApi.Models;
 
 /// <summary>
@@ -18,6 +20,7 @@ public class Card
     /// <summary>
     /// Navigation property to the parent deck
     /// </summary>
+    [JsonIgnore]
     public virtual Deck Deck { get; set; } = null!;
 
     /// <summary>
@@ -78,6 +81,7 @@ public class Card
     /// <summary>
     /// Collection of review logs for this card
     /// </summary>
+    [JsonIgnore]
     public virtual ICollection<ReviewLog> ReviewLogs { get; set; } = new List<ReviewLog>();
 }
 

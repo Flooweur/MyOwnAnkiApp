@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace FlashcardApi.Models;
 
 /// <summary>
@@ -33,6 +35,7 @@ public class Deck
     /// <summary>
     /// Collection of cards belonging to this deck
     /// </summary>
+    [JsonIgnore]
     public virtual ICollection<Card> Cards { get; set; } = new List<Card>();
 
     /// <summary>

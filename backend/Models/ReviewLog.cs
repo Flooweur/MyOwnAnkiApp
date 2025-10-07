@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace FlashcardApi.Models;
 
 /// <summary>
@@ -18,6 +20,7 @@ public class ReviewLog
     /// <summary>
     /// Navigation property to the reviewed card
     /// </summary>
+    [JsonIgnore]
     public virtual Card Card { get; set; } = null!;
 
     /// <summary>
