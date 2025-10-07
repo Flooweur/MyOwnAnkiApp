@@ -3,6 +3,7 @@ using FlashcardApi.Models;
 using System.Data.SQLite;
 using System.IO.Compression;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 
 namespace FlashcardApi.Services;
 
@@ -130,54 +131,102 @@ public class ApkgParserService : IApkgParserService
             using var connection = new SQLiteConnection(connectionString);
             connection.Open();
 
-            // Get deck name from col table
-            using (var cmd = new SQLiteCommand("SELECT decks FROM col LIMIT 1", connection))
+            // First, let's check what tables exist in the database
+            var tables = new List<string>();
+            using (var cmd = new SQLiteCommand("SELECT name FROM sqlite_master WHERE type='table'", connection))
+            using (var reader = cmd.ExecuteReader())
             {
-                var result = cmd.ExecuteScalar();
-                if (result != null)
+                while (reader.Read())
                 {
-                    // The decks field is a JSON object, parse it to get the first deck name
-                    var decksJson = result.ToString();
-                    // Simple extraction - in production, use a JSON parser
-                    var nameMatch = Regex.Match(decksJson ?? "", @"""name""\s*:\s*""([^""]+)""");
-                    if (nameMatch.Success)
-                    {
-                        parsedDeck.Name = nameMatch.Groups[1].Value;
-                    }
+                    tables.Add(reader.GetString(0));
                 }
             }
+            
+            Console.WriteLine($"Tables found in database: {string.Join(", ", tables)}");
 
-            // If no deck name found, try to get it from the cards table
-            if (string.IsNullOrEmpty(parsedDeck.Name))
+            // Parse models (note types) from the collection to understand field mappings
+            Dictionary<long, NoteModel> noteModels = new Dictionary<long, NoteModel>();
+            try
             {
-                using (var cmd = new SQLiteCommand("SELECT DISTINCT did FROM cards LIMIT 1", connection))
+                using (var cmd = new SQLiteCommand("SELECT models FROM col LIMIT 1", connection))
                 {
-                    var deckId = cmd.ExecuteScalar();
-                    if (deckId != null)
+                    var result = cmd.ExecuteScalar();
+                    if (result != null)
                     {
-                        // Try to get deck name from the decks JSON using the deck ID
-                        using (var deckCmd = new SQLiteCommand("SELECT decks FROM col LIMIT 1", connection))
+                        var modelsJson = result.ToString();
+                        if (!string.IsNullOrEmpty(modelsJson))
                         {
-                            var decksJson = deckCmd.ExecuteScalar()?.ToString();
-                            if (!string.IsNullOrEmpty(decksJson))
+                            try
                             {
-                                var deckIdStr = deckId.ToString();
-                                var nameMatch = Regex.Match(decksJson, $@"""{deckIdStr}""\s*:\s*{{[^}}]*""name""\s*:\s*""([^""]+)""");
-                                if (nameMatch.Success)
+                                var modelsDoc = JsonDocument.Parse(modelsJson);
+                                foreach (var modelProp in modelsDoc.RootElement.EnumerateObject())
                                 {
-                                    parsedDeck.Name = nameMatch.Groups[1].Value;
+                                    if (long.TryParse(modelProp.Name, out var modelId))
+                                    {
+                                        var model = ParseNoteModel(modelProp.Value);
+                                        noteModels[modelId] = model;
+                                        Console.WriteLine($"Found model: {model.Name} with {model.FieldNames.Count} fields and {model.Templates.Count} templates");
+                                    }
                                 }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error parsing models JSON: {ex.Message}");
                             }
                         }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading models: {ex.Message}");
+            }
 
-            // Try to get cards by joining notes and cards tables first
-            // Anki stores actual card content in the 'notes' table with fields separated by \x1f
-            // The 'cards' table contains card instances that reference notes via nid
+            // Get deck name from col table
+            try
+            {
+                using (var cmd = new SQLiteCommand("SELECT decks FROM col LIMIT 1", connection))
+                {
+                    var result = cmd.ExecuteScalar();
+                    if (result != null)
+                    {
+                        var decksJson = result.ToString();
+                        if (!string.IsNullOrEmpty(decksJson))
+                        {
+                            try
+                            {
+                                var decksDoc = JsonDocument.Parse(decksJson);
+                                // Get the first non-default deck
+                                foreach (var deckProp in decksDoc.RootElement.EnumerateObject())
+                                {
+                                    if (deckProp.Value.TryGetProperty("name", out var nameElement))
+                                    {
+                                        var name = nameElement.GetString();
+                                        if (!string.IsNullOrEmpty(name) && name != "Default")
+                                        {
+                                            parsedDeck.Name = name;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error parsing decks JSON: {ex.Message}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading decks: {ex.Message}");
+            }
+
+            // Now get cards by joining notes and cards tables
+            // We need to get: note fields, note model id, and card template ordinal
             var query = @"
-                SELECT n.flds, c.did 
+                SELECT n.id, n.mid, n.flds, c.ord, c.id 
                 FROM notes n 
                 INNER JOIN cards c ON n.id = c.nid 
                 WHERE n.flds IS NOT NULL AND n.flds != ''
@@ -194,77 +243,124 @@ public class ApkgParserService : IApkgParserService
                     while (reader.Read())
                     {
                         totalRows++;
-                        var fields = reader.GetString(0).Split('\x1f');
                         
-                        // Skip system messages and empty cards
-                        if (fields.Length == 0 || 
-                            (fields.Length == 1 && fields[0].Contains("Please update to the latest Anki version")))
+                        var noteId = reader.GetInt64(0);
+                        var modelId = reader.GetInt64(1);
+                        var fieldsStr = reader.GetString(2);
+                        var cardOrd = reader.GetInt32(3);
+                        
+                        var fields = fieldsStr.Split('\x1f');
+                        
+                        // Skip empty cards or system messages
+                        if (fields.Length == 0)
                         {
                             skippedRows++;
                             continue;
                         }
+
+                        // Check if this is a system message
+                        var firstField = fields[0]?.Trim() ?? "";
+                        if (firstField.Contains("Please update to the latest Anki version", StringComparison.OrdinalIgnoreCase) ||
+                            firstField.Contains("Anki 2.1.50+", StringComparison.OrdinalIgnoreCase))
+                        {
+                            skippedRows++;
+                            continue;
+                        }
+
+                        // Try to use the model template to generate the card
+                        string front = "";
+                        string back = "";
                         
-                        if (fields.Length >= 2)
+                        if (noteModels.TryGetValue(modelId, out var model) && cardOrd < model.Templates.Count)
+                        {
+                            var template = model.Templates[cardOrd];
+                            front = ApplyTemplate(template.QuestionFormat, fields, model.FieldNames);
+                            back = ApplyTemplate(template.AnswerFormat, fields, model.FieldNames);
+                        }
+                        else
+                        {
+                            // Fallback: use simple field mapping
+                            if (fields.Length >= 2)
+                            {
+                                front = fields[0];
+                                back = fields[1];
+                            }
+                            else if (fields.Length == 1)
+                            {
+                                front = fields[0];
+                                back = fields[0];
+                            }
+                            else
+                            {
+                                skippedRows++;
+                                continue;
+                            }
+                        }
+
+                        // Only add if both front and back have content
+                        if (!string.IsNullOrWhiteSpace(front) && !string.IsNullOrWhiteSpace(back))
                         {
                             cards.Add(new ParsedCard
                             {
-                                Front = fields[0],
-                                Back = fields[1]
+                                Front = front,
+                                Back = back
                             });
                         }
-                        else if (fields.Length == 1)
+                        else
                         {
-                            // Single field cards - use same content for front and back
-                            cards.Add(new ParsedCard
-                            {
-                                Front = fields[0],
-                                Back = fields[0]
-                            });
+                            skippedRows++;
                         }
                     }
                     
-                    // Log debugging information
                     Console.WriteLine($"Total rows processed: {totalRows}, Skipped: {skippedRows}, Cards added: {cards.Count}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error with JOIN query: {ex.Message}");
+                Console.WriteLine($"Error with main query: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 
-                // Fallback: try to get cards directly from notes table
-                // This is less accurate but might work for some Anki versions
-                using (var cmd = new SQLiteCommand("SELECT flds FROM notes WHERE flds IS NOT NULL AND flds != ''", connection))
-                using (var reader = cmd.ExecuteReader())
+                // Fallback: try simpler approach
+                try
                 {
-                    while (reader.Read())
+                    var simpleQuery = "SELECT flds FROM notes WHERE flds IS NOT NULL AND flds != ''";
+                    using (var cmd = new SQLiteCommand(simpleQuery, connection))
+                    using (var reader = cmd.ExecuteReader())
                     {
-                        var fields = reader.GetString(0).Split('\x1f');
-                        
-                        // Skip system messages and empty cards
-                        if (fields.Length == 0 || 
-                            (fields.Length == 1 && fields[0].Contains("Please update to the latest Anki version")))
+                        while (reader.Read())
                         {
-                            continue;
-                        }
-                        
-                        if (fields.Length >= 2)
-                        {
-                            cards.Add(new ParsedCard
+                            var fieldsStr = reader.GetString(0);
+                            var fields = fieldsStr.Split('\x1f');
+                            
+                            if (fields.Length < 1)
+                                continue;
+
+                            var firstField = fields[0]?.Trim() ?? "";
+                            if (firstField.Contains("Please update to the latest Anki version", StringComparison.OrdinalIgnoreCase))
+                                continue;
+                            
+                            if (fields.Length >= 2)
                             {
-                                Front = fields[0],
-                                Back = fields[1]
-                            });
-                        }
-                        else if (fields.Length == 1)
-                        {
-                            // Single field cards - use same content for front and back
-                            cards.Add(new ParsedCard
+                                cards.Add(new ParsedCard
+                                {
+                                    Front = fields[0],
+                                    Back = fields[1]
+                                });
+                            }
+                            else if (fields.Length == 1 && !string.IsNullOrWhiteSpace(fields[0]))
                             {
-                                Front = fields[0],
-                                Back = fields[0]
-                            });
+                                cards.Add(new ParsedCard
+                                {
+                                    Front = fields[0],
+                                    Back = fields[0]
+                                });
+                            }
                         }
                     }
+                }
+                catch (Exception fallbackEx)
+                {
+                    Console.WriteLine($"Fallback query also failed: {fallbackEx.Message}");
                 }
             }
         });
@@ -277,7 +373,126 @@ public class ApkgParserService : IApkgParserService
             parsedDeck.Name = "Imported Deck";
         }
 
+        Console.WriteLine($"Successfully parsed deck '{parsedDeck.Name}' with {parsedDeck.Cards.Count} cards");
+
         return parsedDeck;
+    }
+
+    /// <summary>
+    /// Parses a note model (note type) from JSON
+    /// </summary>
+    private NoteModel ParseNoteModel(JsonElement modelElement)
+    {
+        var model = new NoteModel();
+        
+        if (modelElement.TryGetProperty("name", out var nameElement))
+        {
+            model.Name = nameElement.GetString() ?? "Unknown";
+        }
+        
+        if (modelElement.TryGetProperty("flds", out var fieldsElement) && fieldsElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var field in fieldsElement.EnumerateArray())
+            {
+                if (field.TryGetProperty("name", out var fieldName))
+                {
+                    model.FieldNames.Add(fieldName.GetString() ?? "");
+                }
+            }
+        }
+        
+        if (modelElement.TryGetProperty("tmpls", out var templatesElement) && templatesElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var tmpl in templatesElement.EnumerateArray())
+            {
+                var template = new CardTemplate();
+                
+                if (tmpl.TryGetProperty("qfmt", out var qfmt))
+                {
+                    template.QuestionFormat = qfmt.GetString() ?? "";
+                }
+                
+                if (tmpl.TryGetProperty("afmt", out var afmt))
+                {
+                    template.AnswerFormat = afmt.GetString() ?? "";
+                }
+                
+                model.Templates.Add(template);
+            }
+        }
+        
+        return model;
+    }
+
+    /// <summary>
+    /// Applies an Anki template to fields to generate card content
+    /// </summary>
+    private string ApplyTemplate(string template, string[] fields, List<string> fieldNames)
+    {
+        if (string.IsNullOrEmpty(template))
+            return "";
+        
+        var result = template;
+        
+        // Replace field references like {{Field1}} with actual field values
+        for (int i = 0; i < fieldNames.Count && i < fields.Length; i++)
+        {
+            var fieldName = fieldNames[i];
+            var fieldValue = fields[i];
+            
+            // Handle standard field substitution
+            result = result.Replace($"{{{{{fieldName}}}}}", fieldValue);
+            
+            // Handle cloze deletions {{cloze:Text}}
+            result = Regex.Replace(result, @"\{\{cloze:([^}]+)\}\}", m => {
+                var fieldRef = m.Groups[1].Value;
+                var idx = fieldNames.IndexOf(fieldRef);
+                if (idx >= 0 && idx < fields.Length)
+                {
+                    // Remove cloze markers like {{c1::text}}
+                    return Regex.Replace(fields[idx], @"\{\{c\d+::([^}]+)\}\}", "$1");
+                }
+                return "";
+            });
+            
+            // Handle other template types (type:, hint:, etc.)
+            result = Regex.Replace(result, @"\{\{(?:type|hint|text):([^}]+)\}\}", m => {
+                var fieldRef = m.Groups[1].Value;
+                var idx = fieldNames.IndexOf(fieldRef);
+                if (idx >= 0 && idx < fields.Length)
+                {
+                    return fields[idx];
+                }
+                return "";
+            });
+        }
+        
+        // Remove any remaining template markers
+        result = Regex.Replace(result, @"\{\{[^}]+\}\}", "");
+        
+        // Clean up the result
+        result = result.Trim();
+        
+        return result;
+    }
+
+    /// <summary>
+    /// Represents an Anki note model (note type)
+    /// </summary>
+    private class NoteModel
+    {
+        public string Name { get; set; } = "";
+        public List<string> FieldNames { get; set; } = new List<string>();
+        public List<CardTemplate> Templates { get; set; } = new List<CardTemplate>();
+    }
+
+    /// <summary>
+    /// Represents a card template
+    /// </summary>
+    private class CardTemplate
+    {
+        public string QuestionFormat { get; set; } = "";
+        public string AnswerFormat { get; set; } = "";
     }
 
     /// <summary>

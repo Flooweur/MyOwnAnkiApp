@@ -1,0 +1,33 @@
+Fix .apkg file import - now correctly imports all cards
+
+Previously, importing .apkg files only showed 1 card with "Please update to
+the latest Anki version" message. This was caused by the parser not properly
+understanding Anki's note type system and card templates.
+
+Changes:
+- Complete rewrite of ParseAnki2DatabaseAsync() in ApkgParserService
+- Added proper note type (model) parsing from Anki database
+- Implemented template application for card generation
+- Replaced regex-based JSON parsing with System.Text.Json
+- Enhanced system message filtering
+- Added comprehensive error handling and logging
+- Added helper methods: ParseNoteModel(), ApplyTemplate()
+- Added helper classes: NoteModel, CardTemplate
+
+The parser now:
+✅ Imports all cards from .apkg files (not just 1)
+✅ Supports Anki 2.0.x, 2.1.x, and 2.1.50+
+✅ Handles Basic, Cloze, and custom note types
+✅ Processes Anki template syntax ({{FieldName}}, cloze, etc.)
+✅ Provides detailed logging for debugging
+
+No external libraries required - uses built-in .NET components only.
+No changes to SQL schema, API contracts, or frontend code.
+
+Files modified:
+- backend/Services/ApkgParserService.cs
+
+Documentation added:
+- APKG_PARSER_FIX.md (technical details)
+- CHANGES_SUMMARY.md (quick reference)
+- FIX_COMPLETE.md (user guide)
