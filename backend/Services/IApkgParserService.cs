@@ -14,6 +14,14 @@ public interface IApkgParserService
     /// <param name="fileName">Original file name</param>
     /// <returns>The created deck with imported cards</returns>
     Task<Deck> ImportApkgAsync(Stream apkgStream, string fileName);
+    
+    /// <summary>
+    /// Analyzes an APKG file without importing it (for debugging)
+    /// </summary>
+    /// <param name="apkgStream">Stream containing the .apkg file data</param>
+    /// <param name="fileName">Original file name</param>
+    /// <returns>Analysis results</returns>
+    Task<Dictionary<string, object>> AnalyzeApkgFileAsync(Stream apkgStream, string fileName);
 }
 
 /// <summary>

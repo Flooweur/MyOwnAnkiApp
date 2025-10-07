@@ -4,6 +4,16 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure structured logging
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
+// Configure log levels for better visibility
+builder.Logging.SetMinimumLevel(LogLevel.Information);
+builder.Logging.AddFilter("FlashcardApi.Services.ApkgParserService", LogLevel.Debug);
+builder.Logging.AddFilter("FlashcardApi.Controllers.DecksController", LogLevel.Information);
+
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
