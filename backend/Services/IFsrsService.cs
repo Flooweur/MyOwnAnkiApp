@@ -26,4 +26,9 @@ public interface IFsrsService
     /// Calculates current retrievability for a card
     /// </summary>
     double GetCurrentRetrievability(Card card, FsrsParameters parameters);
+
+    /// <summary>
+    /// Calculates scheduling intervals for all grades without updating the card
+    /// </summary>
+    Dictionary<int, TimeSpan> CalculateSchedulingIntervals(Card card, FsrsParameters parameters);
 }

@@ -9,138 +9,109 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-  padding: 1rem 1.5rem;
-  background: var(--bg-secondary);
-  border-radius: 16px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  padding: 0.75rem 0;
 }
 
 .back-button-small {
   background: transparent;
-  border: 1.5px solid var(--accent-primary);
-  color: var(--accent-secondary);
-  padding: 0.625rem 1.25rem;
-  border-radius: 10px;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.5rem 0;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  transition: all 0.2s ease;
   font-size: 0.9rem;
 }
 
 .back-button-small:hover {
-  background: var(--accent-primary);
-  color: white;
+  color: var(--accent-primary);
   transform: translateX(-4px);
-  box-shadow: var(--shadow-glow);
 }
 
 .card-stats {
   display: flex;
-  gap: 2rem;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
 .card-stats span {
-  padding: 0.5rem 1rem;
-  background: var(--bg-tertiary);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  font-weight: 500;
+  font-weight: 400;
 }
 
-/* Card container with flip effect */
+/* Card container with slide effect */
 .card-container {
-  perspective: 1500px;
   margin-bottom: 2rem;
   min-height: 450px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
-.flashcard {
+.cards-wrapper {
   width: 100%;
-  max-width: 700px;
+  max-width: 1400px;
   min-height: 450px;
   position: relative;
-  transition: transform 0.6s;
-  transform-style: preserve-3d;
-}
-
-.flashcard.flipping {
-  animation: flip 0.6s ease-in-out;
-}
-
-@keyframes flip {
-  0% {
-    transform: rotateY(0deg) scale(1);
-  }
-  50% {
-    transform: rotateY(90deg) scale(0.95);
-  }
-  100% {
-    transform: rotateY(0deg) scale(1);
-  }
+  display: flex;
+  gap: 2rem;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-face {
-  width: 100%;
+  flex: 1;
+  min-width: 600px;
   min-height: 450px;
-  background: var(--bg-secondary);
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
   padding: 2.5rem;
-  box-shadow: var(--shadow-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
   overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card-face::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--accent-gradient);
-  opacity: 0.03;
-  z-index: 0;
-}
-
-.card-face > * {
-  position: relative;
-  z-index: 1;
-}
-
-.card-front {
+.card-question {
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card-front:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-glow);
-  border-color: var(--accent-primary);
+.card-question:not(.slide-left):hover {
+  transform: translateY(-2px);
+  border-color: rgba(124, 58, 237, 0.3);
+}
+
+.card-question.slide-left {
+  transform: translateX(-120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.card-answer {
+  position: absolute;
+  right: 0;
+  transform: translateX(120%);
+  opacity: 0;
+}
+
+.card-answer.slide-in {
+  position: relative;
+  transform: translateX(0);
+  opacity: 1;
 }
 
 .card-label {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--accent-secondary);
-  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  font-weight: 500;
   margin-bottom: 2rem;
-  padding: 0.5rem 1rem;
-  background: rgba(124, 58, 237, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(124, 58, 237, 0.2);
 }
 
 .card-content {
@@ -158,14 +129,10 @@
 }
 
 .tap-hint {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: 2rem;
-  font-style: italic;
-  padding: 0.5rem 1rem;
-  background: var(--bg-tertiary);
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+  opacity: 0.6;
 }
 
 /* Grade buttons */
@@ -177,45 +144,26 @@
 }
 
 .grade-button {
-  background: var(--bg-secondary);
-  border: 2px solid;
-  border-radius: 14px;
-  padding: 1.5rem 1rem;
+  background: transparent;
+  border: 1px solid;
+  border-radius: 10px;
+  padding: 1.25rem 1rem;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  box-shadow: var(--shadow-sm);
   position: relative;
-  overflow: hidden;
-}
-
-.grade-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 0;
-}
-
-.grade-button > * {
-  position: relative;
-  z-index: 1;
 }
 
 .grade-button:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .grade-button:active {
-  transform: translateY(-2px);
+  transform: translateY(0);
 }
 
 .grade-label {
@@ -223,83 +171,51 @@
   font-weight: 700;
 }
 
-.grade-hint {
-  font-size: 0.75rem;
-  font-weight: normal;
-  opacity: 0.8;
+.grade-interval {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.9;
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  margin-top: 0.25rem;
 }
 
 /* Grade button colors */
 .grade-again {
-  border-color: var(--color-again);
+  border-color: rgba(239, 68, 68, 0.4);
   color: var(--color-again);
 }
 
-.grade-again::before {
-  background: var(--color-again);
-}
-
 .grade-again:hover {
-  background: var(--color-again);
-  color: white;
-}
-
-.grade-again:hover::before {
-  opacity: 1;
+  border-color: var(--color-again);
 }
 
 .grade-hard {
-  border-color: var(--color-hard);
+  border-color: rgba(245, 158, 11, 0.4);
   color: var(--color-hard);
 }
 
-.grade-hard::before {
-  background: var(--color-hard);
-}
-
 .grade-hard:hover {
-  background: var(--color-hard);
-  color: white;
-}
-
-.grade-hard:hover::before {
-  opacity: 1;
+  border-color: var(--color-hard);
 }
 
 .grade-good {
-  border-color: var(--color-good);
+  border-color: rgba(16, 185, 129, 0.4);
   color: var(--color-good);
 }
 
-.grade-good::before {
-  background: var(--color-good);
-}
-
 .grade-good:hover {
-  background: var(--color-good);
-  color: white;
-}
-
-.grade-good:hover::before {
-  opacity: 1;
+  border-color: var(--color-good);
 }
 
 .grade-easy {
-  border-color: var(--color-easy);
+  border-color: rgba(124, 58, 237, 0.4);
   color: var(--color-easy);
 }
 
-.grade-easy::before {
-  background: var(--color-easy);
-}
-
 .grade-easy:hover {
-  background: var(--color-easy);
-  color: white;
-}
-
-.grade-easy:hover::before {
-  opacity: 1;
+  border-color: var(--color-easy);
 }
 
 /* Completion state */
@@ -416,12 +332,17 @@
   }
 
   .card-face {
+    min-width: 100%;
     min-height: 380px;
     padding: 2rem;
   }
 
   .review-header {
     padding: 1rem;
+  }
+
+  .cards-wrapper {
+    max-width: 100%;
   }
 }
 
@@ -449,6 +370,7 @@
   }
 
   .card-face {
+    min-width: 100%;
     min-height: 350px;
     padding: 1.5rem;
   }

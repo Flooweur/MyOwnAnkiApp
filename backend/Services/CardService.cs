@@ -126,4 +126,18 @@ public class CardService : ICardService
 
         return nextCard;
     }
+
+    /// <summary>
+    /// Gets scheduling intervals for all grades for a specific card
+    /// </summary>
+    public Dictionary<int, TimeSpan> GetSchedulingIntervals(Card card)
+    {
+        // Get FSRS parameters for this card's deck
+        var deck = _context.Decks.Find(card.DeckId);
+        var parameters = string.IsNullOrEmpty(deck?.FsrsParameters)
+            ? _fsrsService.GetDefaultParameters()
+            : JsonSerializer.Deserialize<FsrsParameters>(deck.FsrsParameters) ?? _fsrsService.GetDefaultParameters();
+
+        return _fsrsService.CalculateSchedulingIntervals(card, parameters);
+    }
 }

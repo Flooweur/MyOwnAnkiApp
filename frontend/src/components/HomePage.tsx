@@ -128,37 +128,6 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="home-page">
-      {/* Drop zone for file upload */}
-      <div
-        className={`drop-zone ${dragActive ? 'drag-active' : ''} ${uploading ? 'uploading' : ''}`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        {uploading ? (
-          <div className="upload-status">
-            <div className="spinner"></div>
-            <p>Uploading and importing deck...</p>
-          </div>
-        ) : (
-          <>
-            <div className="drop-zone-icon">📁</div>
-            <h2>Drop .apkg file here</h2>
-            <p>or</p>
-            <label className="file-input-label">
-              <input
-                type="file"
-                accept=".apkg"
-                onChange={handleFileInputChange}
-                className="file-input"
-              />
-              <span className="file-input-button">Browse Files</span>
-            </label>
-          </>
-        )}
-      </div>
-
       {/* Error message */}
       {error && (
         <div className="error-message">
@@ -194,6 +163,37 @@ const HomePage: React.FC = () => {
               />
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Drop zone for file upload */}
+      <div
+        className={`drop-zone ${dragActive ? 'drag-active' : ''} ${uploading ? 'uploading' : ''}`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        {uploading ? (
+          <div className="upload-status">
+            <div className="spinner"></div>
+            <p>Uploading and importing deck...</p>
+          </div>
+        ) : (
+          <>
+            <div className="drop-zone-icon">📁</div>
+            <h2>Drop .apkg file here</h2>
+            <p>or</p>
+            <label className="file-input-label">
+              <input
+                type="file"
+                accept=".apkg"
+                onChange={handleFileInputChange}
+                className="file-input"
+              />
+              <span className="file-input-button">Browse Files</span>
+            </label>
+          </>
         )}
       </div>
     </div>
