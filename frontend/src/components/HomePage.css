@@ -1,0 +1,177 @@
+.home-page {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Drop zone styles */
+.drop-zone {
+  background: rgba(255, 255, 255, 0.95);
+  border: 3px dashed #ccc;
+  border-radius: 16px;
+  padding: 3rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  margin-bottom: 3rem;
+}
+
+.drop-zone:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+}
+
+.drop-zone.drag-active {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.02);
+}
+
+.drop-zone.uploading {
+  border-color: #667eea;
+  cursor: wait;
+}
+
+.drop-zone-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.drop-zone h2 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.drop-zone p {
+  color: #666;
+  margin: 1rem 0;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-input-label {
+  display: inline-block;
+}
+
+.file-input-button {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.file-input-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Upload status */
+.upload-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Error message */
+.error-message {
+  background: #fee;
+  border: 2px solid #fcc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #c33;
+}
+
+.error-message button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #c33;
+  padding: 0 0.5rem;
+}
+
+/* Deck list section */
+.deck-list-section {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.deck-list-section h2 {
+  color: #333;
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #666;
+}
+
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+/* Loading state */
+.loading-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #666;
+}
+
+/* Deck grid */
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Spinner animation */
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .drop-zone {
+    padding: 2rem 1rem;
+  }
+
+  .drop-zone-icon {
+    font-size: 3rem;
+  }
+
+  .deck-grid {
+    grid-template-columns: 1fr;
+  }
+}

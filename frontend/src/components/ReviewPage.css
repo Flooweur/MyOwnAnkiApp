@@ -1,0 +1,334 @@
+.review-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.back-button-small {
+  background: none;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.back-button-small:hover {
+  background: #667eea;
+  color: white;
+  transform: translateX(-4px);
+}
+
+.card-stats {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Card container with flip effect */
+.card-container {
+  perspective: 1500px;
+  margin-bottom: 2rem;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flashcard {
+  width: 100%;
+  max-width: 600px;
+  min-height: 400px;
+  position: relative;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flashcard.flipping {
+  animation: flip 0.6s ease-in-out;
+}
+
+@keyframes flip {
+  0% {
+    transform: rotateY(0deg) scale(1);
+  }
+  50% {
+    transform: rotateY(90deg) scale(0.95);
+  }
+  100% {
+    transform: rotateY(0deg) scale(1);
+  }
+}
+
+.card-face {
+  width: 100%;
+  min-height: 400px;
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.card-front {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-front:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+}
+
+.card-label {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #667eea;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.card-content {
+  font-size: 1.5rem;
+  line-height: 1.6;
+  color: #333;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tap-hint {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 1.5rem;
+  font-style: italic;
+}
+
+/* Grade buttons */
+.grade-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.grade-button {
+  background: white;
+  border: 3px solid;
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.grade-button:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.grade-button:active {
+  transform: translateY(-2px);
+}
+
+.grade-label {
+  font-size: 1.1rem;
+}
+
+.grade-hint {
+  font-size: 0.75rem;
+  font-weight: normal;
+  opacity: 0.7;
+}
+
+/* Grade button colors */
+.grade-again {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.grade-again:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.grade-hard {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.grade-hard:hover {
+  background: #f59e0b;
+  color: white;
+}
+
+.grade-good {
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.grade-good:hover {
+  background: #10b981;
+  color: white;
+}
+
+.grade-easy {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.grade-easy:hover {
+  background: #667eea;
+  color: white;
+}
+
+/* Completion state */
+.completion-state {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 4rem 2rem;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.completion-icon {
+  font-size: 5rem;
+  margin-bottom: 1rem;
+}
+
+.completion-state h2 {
+  color: #333;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.completion-state p {
+  color: #666;
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+}
+
+.back-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.back-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Loading and error states */
+.loading-state,
+.reviewing-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #666;
+}
+
+.error-message {
+  background: #fee;
+  border: 2px solid #fcc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #c33;
+}
+
+.error-message button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #c33;
+  padding: 0 0.5rem;
+}
+
+/* Spinner */
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .grade-buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .card-content {
+    font-size: 1.25rem;
+  }
+
+  .card-face {
+    min-height: 350px;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .grade-buttons {
+    gap: 0.75rem;
+  }
+
+  .grade-button {
+    padding: 1rem 0.75rem;
+  }
+
+  .card-content {
+    font-size: 1.1rem;
+  }
+}
