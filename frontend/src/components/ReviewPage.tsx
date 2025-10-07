@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiService from '../api';
 import { Card, ReviewGrade } from '../types';
+import { reformulateQuestion } from '../services/llmService';
 import './ReviewPage.css';
 
 /**
@@ -16,7 +17,8 @@ const ReviewPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isFlipping, setIsFlipping] = useState(false);
+  const [schedulingIntervals, setSchedulingIntervals] = useState<{ [grade: string]: string }>({});
+  const [displayQuestion, setDisplayQuestion] = useState<string>('');
 
   /**
    * Loads the next card to review
@@ -30,6 +32,16 @@ const ReviewPage: React.FC = () => {
       setShowAnswer(false);
       const response = await apiService.getNextCard(parseInt(deckId));
       setCurrentCard(response.card);
+      setSchedulingIntervals(response.schedulingIntervals || {});
+      
+      // Reformulate question using LLM if card exists
+      if (response.card) {
+        const reformulated = await reformulateQuestion(
+          response.card.front,
+          response.card.back
+        );
+        setDisplayQuestion(reformulated);
+      }
     } catch (err) {
       console.error('Error loading next card:', err);
       setError('Failed to load card. Please try again.');
@@ -44,14 +56,10 @@ const ReviewPage: React.FC = () => {
   }, [loadNextCard]);
 
   /**
-   * Handles showing the answer with flip animation
+   * Handles showing the answer with slide animation
    */
   const handleShowAnswer = () => {
-    setIsFlipping(true);
-    setTimeout(() => {
-      setShowAnswer(true);
-      setIsFlipping(false);
-    }, 300);
+    setShowAnswer(true);
   };
 
   /**
@@ -148,27 +156,23 @@ const ReviewPage: React.FC = () => {
       )}
 
       <div className="card-container">
-        <div className={`flashcard ${isFlipping ? 'flipping' : ''} ${showAnswer ? 'flipped' : ''}`}>
-          {/* Front of card (Question) */}
-          {!showAnswer && (
-            <div className="card-face card-front" onClick={handleShowAnswer}>
-              <div className="card-label">Question</div>
-              <div className="card-content">
-                {currentCard.front}
-              </div>
-              <div className="tap-hint">Tap to reveal answer</div>
+        <div className={`cards-wrapper ${showAnswer ? 'showing-answer' : ''}`}>
+          {/* Question card */}
+          <div className={`card-face card-question ${showAnswer ? 'slide-left' : ''}`} onClick={!showAnswer ? handleShowAnswer : undefined}>
+            <div className="card-label">Question</div>
+            <div className="card-content">
+              {displayQuestion || currentCard.front}
             </div>
-          )}
+            {!showAnswer && <div className="tap-hint">Tap to reveal answer</div>}
+          </div>
 
-          {/* Back of card (Answer) */}
-          {showAnswer && (
-            <div className="card-face card-back">
-              <div className="card-label">Answer</div>
-              <div className="card-content">
-                {currentCard.back}
-              </div>
+          {/* Answer card */}
+          <div className={`card-face card-answer ${showAnswer ? 'slide-in' : ''}`}>
+            <div className="card-label">Answer</div>
+            <div className="card-content">
+              {currentCard.back}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -180,28 +184,28 @@ const ReviewPage: React.FC = () => {
             onClick={() => handleReview(ReviewGrade.Again)}
           >
             <span className="grade-label">Again</span>
-            <span className="grade-hint">Forgot</span>
+            <span className="grade-interval">{schedulingIntervals['1'] || '...'}</span>
           </button>
           <button
             className={getGradeButtonClass(ReviewGrade.Hard)}
             onClick={() => handleReview(ReviewGrade.Hard)}
           >
             <span className="grade-label">Hard</span>
-            <span className="grade-hint">Difficult</span>
+            <span className="grade-interval">{schedulingIntervals['2'] || '...'}</span>
           </button>
           <button
             className={getGradeButtonClass(ReviewGrade.Good)}
             onClick={() => handleReview(ReviewGrade.Good)}
           >
             <span className="grade-label">Good</span>
-            <span className="grade-hint">Correct</span>
+            <span className="grade-interval">{schedulingIntervals['3'] || '...'}</span>
           </button>
           <button
             className={getGradeButtonClass(ReviewGrade.Easy)}
             onClick={() => handleReview(ReviewGrade.Easy)}
           >
             <span className="grade-label">Easy</span>
-            <span className="grade-hint">Very easy</span>
+            <span className="grade-interval">{schedulingIntervals['4'] || '...'}</span>
           </button>
         </div>
       )}

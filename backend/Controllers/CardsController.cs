@@ -53,15 +53,41 @@ public class CardsController : ControllerBase
             var card = await _cardService.GetNextCardToReviewAsync(deckId);
             
             if (card == null)
-                return Ok(new { message = "No cards due for review", card = (object?)null });
+                return Ok(new { message = "No cards due for review", card = (object?)null, schedulingIntervals = (object?)null });
 
-            return Ok(new { message = "Card found", card });
+            // Get scheduling intervals for all grades
+            var intervals = _cardService.GetSchedulingIntervals(card);
+            
+            // Format intervals for display
+            var schedulingIntervals = new Dictionary<string, string>();
+            foreach (var kvp in intervals)
+            {
+                schedulingIntervals[kvp.Key.ToString()] = FormatInterval(kvp.Value);
+            }
+
+            return Ok(new { message = "Card found", card, schedulingIntervals });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching next card for deck {DeckId}", deckId);
             return StatusCode(500, "An error occurred while fetching the next card");
         }
+    }
+
+    /// <summary>
+    /// Formats a TimeSpan interval into a human-readable string
+    /// </summary>
+    private string FormatInterval(TimeSpan interval)
+    {
+        if (interval.TotalMinutes < 60)
+            return $"{(int)interval.TotalMinutes}m";
+        if (interval.TotalHours < 24)
+            return $"{(int)interval.TotalHours}h";
+        if (interval.TotalDays < 30)
+            return $"{(int)interval.TotalDays}d";
+        if (interval.TotalDays < 365)
+            return $"{(int)(interval.TotalDays / 30)}mo";
+        return $"{(int)(interval.TotalDays / 365)}y";
     }
 
     /// <summary>

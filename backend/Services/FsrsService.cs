@@ -128,4 +128,76 @@ public class FsrsService : IFsrsService
         double elapsedDays = (DateTime.UtcNow - card.LastReviewedAt.Value).TotalDays;
         return FsrsAlgorithm.CalculateRetrievability(elapsedDays, card.Stability, parameters.Weights[20]);
     }
+
+    /// <summary>
+    /// Calculates scheduling intervals for all grades without updating the card
+    /// </summary>
+    public Dictionary<int, TimeSpan> CalculateSchedulingIntervals(Card card, FsrsParameters parameters)
+    {
+        var intervals = new Dictionary<int, TimeSpan>();
+        var now = DateTime.UtcNow;
+
+        // Calculate elapsed time since last review
+        double elapsedDays = card.LastReviewedAt.HasValue
+            ? (now - card.LastReviewedAt.Value).TotalDays
+            : 0;
+
+        // Determine if this is a same-day review
+        bool isSameDayReview = card.LastReviewedAt.HasValue && 
+                               card.LastReviewedAt.Value.Date == now.Date;
+
+        // Calculate current retrievability if card has been reviewed before
+        double retrievability = card.ReviewCount > 0
+            ? FsrsAlgorithm.CalculateRetrievability(elapsedDays, card.Stability, parameters.Weights[20])
+            : 1.0;
+
+        // Calculate intervals for each grade (1=Again, 2=Hard, 3=Good, 4=Easy)
+        for (int grade = 1; grade <= 4; grade++)
+        {
+            double stability;
+
+            if (card.State == CardState.New)
+            {
+                // First review: use initial stability
+                stability = FsrsAlgorithm.CalculateInitialStability(grade, parameters);
+            }
+            else if (isSameDayReview)
+            {
+                // Short-term review (same day)
+                stability = FsrsAlgorithm.CalculateShortTermStability(card.Stability, grade, parameters);
+            }
+            else
+            {
+                // Regular review
+                if (grade == 1)
+                {
+                    // Lapse (forgot the card)
+                    stability = FsrsAlgorithm.CalculatePostLapseStability(
+                        card.Stability, card.Difficulty, retrievability, parameters);
+                }
+                else
+                {
+                    // Successful recall
+                    stability = FsrsAlgorithm.CalculateNextStability(
+                        card.Stability, card.Difficulty, retrievability, grade, parameters);
+                }
+            }
+
+            // Calculate next review interval
+            double interval = FsrsAlgorithm.CalculateInterval(stability, parameters.RequestRetention);
+            
+            // Apply fuzzing if enabled
+            if (parameters.EnableFuzz)
+            {
+                interval = FsrsAlgorithm.ApplyFuzz(interval, parameters.EnableFuzz);
+            }
+
+            // Clamp interval to maximum
+            interval = Math.Min(interval, parameters.MaximumInterval);
+
+            intervals[grade] = TimeSpan.FromDays(interval);
+        }
+
+        return intervals;
+    }
 }

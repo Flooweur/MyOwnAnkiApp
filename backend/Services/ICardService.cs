@@ -31,6 +31,11 @@ public interface ICardService
     /// Gets the next card to review from a deck
     /// </summary>
     Task<Card?> GetNextCardToReviewAsync(int deckId);
+
+    /// <summary>
+    /// Gets scheduling intervals for all grades for a specific card
+    /// </summary>
+    Dictionary<int, TimeSpan> GetSchedulingIntervals(Card card);
 }
 
 /// <summary>

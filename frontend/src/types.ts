@@ -72,6 +72,7 @@ export interface ReviewResponse {
 export interface NextCardResponse {
   message: string;
   card: Card | null;
+  schedulingIntervals?: { [grade: string]: string };
 }
 
 /**
