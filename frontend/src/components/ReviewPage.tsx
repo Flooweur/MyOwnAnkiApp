@@ -170,9 +170,12 @@ const ReviewPage: React.FC = () => {
             style={{ cursor: !showAnswer && !isAiEnabled ? 'pointer' : 'default' }}
           >
             <div className="card-label">Question</div>
-            <div className="card-content">
-              {showOriginalQuestion ? currentCard.front : (displayQuestion || currentCard.front)}
-            </div>
+            <div 
+              className="card-content"
+              dangerouslySetInnerHTML={{ 
+                __html: showOriginalQuestion ? currentCard.front : (displayQuestion || currentCard.front) 
+              }}
+            />
             {isAiEnabled && displayQuestion !== currentCard.front && (
               <button className="toggle-original-button" onClick={toggleOriginalQuestion}>
                 {showOriginalQuestion ? 'Show AI Version' : 'Show Original'}
@@ -184,9 +187,10 @@ const ReviewPage: React.FC = () => {
           {/* Answer card */}
           <div className="card-face card-answer">
             <div className="card-label">Answer</div>
-            <div className="card-content">
-              {currentCard.back}
-            </div>
+            <div 
+              className="card-content"
+              dangerouslySetInnerHTML={{ __html: currentCard.back }}
+            />
           </div>
         </div>
       </div>

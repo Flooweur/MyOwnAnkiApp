@@ -32,6 +32,8 @@ public class ParsedDeck
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public List<ParsedCard> Cards { get; set; } = new();
+    public Dictionary<string, string> MediaMapping { get; set; } = new();
+    public string? MediaDirectory { get; set; }
 }
 
 /// <summary>

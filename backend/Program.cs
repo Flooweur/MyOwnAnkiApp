@@ -88,6 +88,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Enable static file serving for media files
+app.UseStaticFiles();
+
 app.UseCors("AllowFrontend");
 app.UseAuthorization();
 app.MapControllers();
