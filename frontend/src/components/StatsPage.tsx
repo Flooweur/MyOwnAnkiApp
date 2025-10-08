@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import apiService from '../api';
 import { DailyStats, RetentionStats, DeckOverviewStats } from '../types';
+import { CHART_COLORS, CHART_TOOLTIP_STYLE, GRADE_COLOR_MAP, STATE_COLOR_MAP } from '../constants/chartColors';
+import { ERROR_MESSAGES, UI_TEXT } from '../constants/messages';
 import './StatsPage.css';
 
 /**
@@ -21,6 +23,7 @@ const StatsPage: React.FC = () => {
 
   useEffect(() => {
     loadStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deckId, timeRange]);
 
   const loadStats = async () => {
@@ -41,7 +44,7 @@ const StatsPage: React.FC = () => {
       setOverviewStats(overview);
     } catch (err) {
       console.error('Error loading stats:', err);
-      setError('Failed to load statistics');
+      setError(ERROR_MESSAGES.LOAD_STATS_FAILED);
     } finally {
       setLoading(false);
     }
@@ -56,7 +59,7 @@ const StatsPage: React.FC = () => {
       <div className="stats-page">
         <div className="loading-state">
           <div className="spinner"></div>
-          <p>Loading statistics...</p>
+          <p>{UI_TEXT.LOADING_STATS}</p>
         </div>
       </div>
     );
@@ -72,16 +75,6 @@ const StatsPage: React.FC = () => {
       </div>
     );
   }
-
-  // Colors for charts
-  const COLORS = {
-    again: '#ef4444',
-    hard: '#f59e0b',
-    good: '#10b981',
-    easy: '#7c3aed',
-    primary: '#7c3aed',
-    secondary: '#a78bfa'
-  };
 
   return (
     <div className="stats-page">
@@ -150,16 +143,9 @@ const StatsPage: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis dataKey="date" stroke="#cbd5e1" tick={{ fontSize: 12 }} />
               <YAxis stroke="#cbd5e1" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1a1a2e', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#f8fafc'
-                }} 
-              />
+              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
               <Legend />
-              <Bar dataKey="cardsReviewed" fill={COLORS.primary} name="Cards Reviewed" />
+              <Bar dataKey="cardsReviewed" fill={CHART_COLORS.primary} name="Cards Reviewed" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -172,19 +158,12 @@ const StatsPage: React.FC = () => {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis dataKey="date" stroke="#cbd5e1" tick={{ fontSize: 12 }} />
               <YAxis stroke="#cbd5e1" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1a1a2e', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#f8fafc'
-                }} 
-              />
+              <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
               <Legend />
-              <Bar dataKey="cardsAgain" stackId="a" fill={COLORS.again} name="Again" />
-              <Bar dataKey="cardsHard" stackId="a" fill={COLORS.hard} name="Hard" />
-              <Bar dataKey="cardsGood" stackId="a" fill={COLORS.good} name="Good" />
-              <Bar dataKey="cardsEasy" stackId="a" fill={COLORS.easy} name="Easy" />
+              <Bar dataKey="cardsAgain" stackId="a" fill={CHART_COLORS.again} name="Again" />
+              <Bar dataKey="cardsHard" stackId="a" fill={CHART_COLORS.hard} name="Hard" />
+              <Bar dataKey="cardsGood" stackId="a" fill={CHART_COLORS.good} name="Good" />
+              <Bar dataKey="cardsEasy" stackId="a" fill={CHART_COLORS.easy} name="Easy" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -198,22 +177,17 @@ const StatsPage: React.FC = () => {
               <XAxis dataKey="date" stroke="#cbd5e1" tick={{ fontSize: 12 }} />
               <YAxis stroke="#cbd5e1" domain={[0, 1]} />
               <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#1a1a2e', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#f8fafc'
-                }}
+                contentStyle={CHART_TOOLTIP_STYLE}
                 formatter={(value: number) => `${(value * 100).toFixed(1)}%`}
               />
               <Legend />
               <Line 
                 type="monotone" 
                 dataKey="averageRetention" 
-                stroke={COLORS.good} 
+                stroke={CHART_COLORS.good} 
                 strokeWidth={2}
                 name="Retention Rate"
-                dot={{ fill: COLORS.good, r: 4 }}
+                dot={{ fill: CHART_COLORS.good, r: 4 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -226,33 +200,20 @@ const StatsPage: React.FC = () => {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={retentionStats.gradeDistribution}
+                  data={retentionStats.gradeDistribution as any}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ grade, percentage }) => `${grade}: ${percentage.toFixed(1)}%`}
+                  label={({ grade, percentage }: any) => `${grade}: ${percentage.toFixed(1)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="count"
                 >
-                  {retentionStats.gradeDistribution.map((entry, index) => {
-                    const colorMap: { [key: string]: string } = {
-                      'Again': COLORS.again,
-                      'Hard': COLORS.hard,
-                      'Good': COLORS.good,
-                      'Easy': COLORS.easy
-                    };
-                    return <Cell key={`cell-${index}`} fill={colorMap[entry.grade] || COLORS.primary} />;
-                  })}
+                  {retentionStats.gradeDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={GRADE_COLOR_MAP[entry.grade] || CHART_COLORS.primary} />
+                  ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1a1a2e', 
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '8px',
-                    color: '#f8fafc'
-                  }} 
-                />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -265,33 +226,20 @@ const StatsPage: React.FC = () => {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={overviewStats.stateDistribution}
+                  data={overviewStats.stateDistribution as any}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ state, percentage }) => `${state}: ${percentage.toFixed(1)}%`}
+                  label={({ state, percentage }: any) => `${state}: ${percentage.toFixed(1)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="count"
                 >
-                  {overviewStats.stateDistribution.map((entry, index) => {
-                    const stateColors: { [key: string]: string } = {
-                      'New': '#3b82f6',
-                      'Learning': '#f59e0b',
-                      'Review': '#8b5cf6',
-                      'Relearning': '#ef4444'
-                    };
-                    return <Cell key={`cell-${index}`} fill={stateColors[entry.state] || COLORS.primary} />;
-                  })}
+                  {overviewStats.stateDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={STATE_COLOR_MAP[entry.state] || CHART_COLORS.primary} />
+                  ))}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#1a1a2e', 
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '8px',
-                    color: '#f8fafc'
-                  }} 
-                />
+                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
               </PieChart>
             </ResponsiveContainer>
           </div>

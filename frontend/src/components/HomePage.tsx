@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import apiService from '../api';
 import { DeckWithStats } from '../types';
 import DeckCard from './DeckCard';
+import { ERROR_MESSAGES, UI_TEXT } from '../constants/messages';
 import './HomePage.css';
 
 /**
@@ -27,7 +28,7 @@ const HomePage: React.FC = () => {
       setDecks(data);
     } catch (err) {
       console.error('Error loading decks:', err);
-      setError('Failed to load decks. Please try again.');
+      setError(ERROR_MESSAGES.LOAD_DECKS_FAILED);
     } finally {
       setLoading(false);
     }
@@ -43,7 +44,7 @@ const HomePage: React.FC = () => {
    */
   const handleFileUpload = async (file: File) => {
     if (!file.name.endsWith('.apkg')) {
-      setError('Please upload a valid .apkg file');
+      setError(ERROR_MESSAGES.INVALID_FILE_TYPE);
       return;
     }
 
@@ -54,7 +55,7 @@ const HomePage: React.FC = () => {
       await loadDecks(); // Reload decks after upload
     } catch (err) {
       console.error('Error uploading file:', err);
-      setError('Failed to upload file. Please try again.');
+      setError(ERROR_MESSAGES.UPLOAD_FILE_FAILED);
     } finally {
       setUploading(false);
     }
@@ -122,7 +123,7 @@ const HomePage: React.FC = () => {
       await loadDecks();
     } catch (err) {
       console.error('Error deleting deck:', err);
-      setError('Failed to delete deck. Please try again.');
+      setError(ERROR_MESSAGES.DELETE_DECK_FAILED);
     }
   };
 
@@ -143,13 +144,13 @@ const HomePage: React.FC = () => {
         {loading ? (
           <div className="loading-state">
             <div className="spinner"></div>
-            <p>Loading decks...</p>
+            <p>{UI_TEXT.LOADING_DECKS}</p>
           </div>
         ) : decks.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">📚</div>
-            <h3>No decks yet</h3>
-            <p>Upload an .apkg file to get started!</p>
+            <h3>{UI_TEXT.NO_DECKS}</h3>
+            <p>{UI_TEXT.NO_DECKS_DESCRIPTION}</p>
           </div>
         ) : (
           <div className="deck-grid">
@@ -177,7 +178,7 @@ const HomePage: React.FC = () => {
         {uploading ? (
           <div className="upload-status">
             <div className="spinner"></div>
-            <p>Uploading and importing deck...</p>
+            <p>{UI_TEXT.UPLOADING}</p>
           </div>
         ) : (
           <>
