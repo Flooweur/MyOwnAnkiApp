@@ -9,8 +9,8 @@ public static class FsrsAlgorithm
     /// <summary>
     /// Calculates retrievability (R) using the FSRS-6 forgetting curve
     /// R represents the probability of successfully recalling a card
-    /// Formula: R = (1 + (t/(9*S))^w20)^-1
-    /// where t is elapsed time and S is stability
+    /// Formula: R = (1 + factor * t/S)^(-w20)
+    /// where factor = 0.9^(-1/w20) - 1 to ensure R(S,S) = 90%
     /// </summary>
     /// <param name="elapsedDays">Days since last review</param>
     /// <param name="stability">Current memory stability</param>
@@ -20,26 +20,33 @@ public static class FsrsAlgorithm
     {
         if (stability <= 0) return 0;
         
-        // FSRS-6 forgetting curve: R = (1 + (t/(9*S))^w20)^-1
-        double exponent = Math.Pow(elapsedDays / (FsrsConstants.RetrievabilityFactor * stability), w20);
-        return Math.Pow(1.0 + exponent, -1.0);
+        // FSRS-6 forgetting curve: R = (1 + factor * t/S)^(-w20)
+        // where factor = 0.9^(-1/w20) - 1 to ensure R(S,S) = 90%
+        double factor = Math.Pow(0.9, -1.0 / w20) - 1.0;
+        double base_value = 1.0 + factor * elapsedDays / stability;
+        return Math.Pow(base_value, -w20);
     }
 
     /// <summary>
     /// Calculates the interval in days until next review
-    /// Formula: I = S * (ln(DR) / ln(0.9))
-    /// where DR is desired retention (request retention)
+    /// FSRS-6 Formula: Solving R = (1 + factor * t/S)^(-w20) for t
+    /// Result: I = S/factor * (r^(-1/w20) - 1)
+    /// where r is desired retention and factor = 0.9^(-1/w20) - 1
     /// </summary>
     /// <param name="stability">Current memory stability</param>
     /// <param name="desiredRetention">Target retention rate (e.g., 0.9)</param>
+    /// <param name="w20">Forgetting curve shape parameter</param>
     /// <returns>Interval in days</returns>
-    public static double CalculateInterval(double stability, double desiredRetention)
+    public static double CalculateInterval(double stability, double desiredRetention, double w20)
     {
-        // When desired retention is 0.9 (90%), interval equals stability
-        // Formula: I = S * (ln(DR) / ln(0.9))
+        // When desired retention is >= 1.0, return stability
         if (desiredRetention >= 1.0) return stability;
+        if (desiredRetention <= 0.0) return FsrsConstants.MinInterval;
         
-        double interval = stability * (Math.Log(desiredRetention) / Math.Log(FsrsConstants.DefaultRequestRetention));
+        // FSRS-6 interval formula: I = S/factor * (r^(-1/w20) - 1)
+        double factor = Math.Pow(0.9, -1.0 / w20) - 1.0;
+        double interval = stability / factor * (Math.Pow(desiredRetention, -1.0 / w20) - 1.0);
+        
         return Math.Max(FsrsConstants.MinInterval, interval);
     }
 
@@ -65,16 +72,16 @@ public static class FsrsAlgorithm
 
     /// <summary>
     /// Calculates initial difficulty after the first review
-    /// Formula: D0 = w4 - w5 * (G - 3)
-    /// where G is grade (1-4), clamped to 1-10 range
+    /// FSRS-5/6 Formula: D0(G) = w4 - e^(w5 * (G - 1)) + 1
+    /// where w4 = D0(1), i.e., the initial difficulty when the first rating is Again
     /// </summary>
     /// <param name="grade">Review grade (1=Again, 2=Hard, 3=Good, 4=Easy)</param>
     /// <param name="parameters">FSRS parameters</param>
     /// <returns>Initial difficulty value (1-10)</returns>
     public static double CalculateInitialDifficulty(int grade, FsrsParameters parameters)
     {
-        // Formula: D0 = w4 - w5 * (G - 3)
-        double difficulty = parameters.Weights[4] - parameters.Weights[5] * (grade - FsrsConstants.GradeGood);
+        // FSRS-5/6 Formula: D0(G) = w4 - e^(w5 * (G - 1)) + 1
+        double difficulty = parameters.Weights[4] - Math.Exp(parameters.Weights[5] * (grade - 1)) + 1;
         
         // Clamp to valid range [1, 10]
         return Math.Clamp(difficulty, FsrsConstants.MinDifficulty, FsrsConstants.MaxDifficulty);
@@ -82,7 +89,11 @@ public static class FsrsAlgorithm
 
     /// <summary>
     /// Updates difficulty after a review
-    /// FSRS-6 Formula: D' = D - w6 * (G - 3), then apply mean reversion
+    /// FSRS-5/6 Formula with linear damping:
+    /// ΔD(G) = -w6 * (G - 3)
+    /// D' = D + ΔD * (10 - D) / 9
+    /// D'' = w7 * D0(4) + (1 - w7) * D'
+    /// Mean reversion to D0(4) instead of D0(3)
     /// </summary>
     /// <param name="currentDifficulty">Current difficulty value</param>
     /// <param name="grade">Review grade (1=Again, 2=Hard, 3=Good, 4=Easy)</param>
@@ -90,17 +101,24 @@ public static class FsrsAlgorithm
     /// <returns>Updated difficulty value</returns>
     public static double UpdateDifficulty(double currentDifficulty, int grade, FsrsParameters parameters)
     {
-        // FSRS-6 difficulty update: D' = D - w6 * (G - 3)
+        // FSRS-5/6 difficulty update with linear damping
+        // ΔD(G) = -w6 * (G - 3)
         // This means:
-        // - Again (G=1): D' = D - w6 * (-2) = D + 2*w6 (increase)
-        // - Hard (G=2): D' = D - w6 * (-1) = D + w6 (increase)
-        // - Good (G=3): D' = D - w6 * 0 = D (no change)
-        // - Easy (G=4): D' = D - w6 * 1 = D - w6 (decrease)
-        double nextDifficulty = currentDifficulty - parameters.Weights[6] * (grade - FsrsConstants.GradeGood);
+        // - Again (G=1): ΔD = -w6 * (-2) = 2*w6 (increase)
+        // - Hard (G=2): ΔD = -w6 * (-1) = w6 (increase)
+        // - Good (G=3): ΔD = -w6 * 0 = 0 (no change)
+        // - Easy (G=4): ΔD = -w6 * 1 = -w6 (decrease)
+        double deltaD = -parameters.Weights[6] * (grade - FsrsConstants.GradeGood);
+        
+        // Apply linear damping: D' = D + ΔD * (10 - D) / 9
+        double nextDifficulty = currentDifficulty + deltaD * (FsrsConstants.MaxDifficulty - currentDifficulty) / 9.0;
 
-        // Apply mean reversion towards default difficulty (w4)
-        // Formula: D'' = w7 * D0 + (1 - w7) * D'
-        nextDifficulty = parameters.Weights[7] * parameters.Weights[4] + 
+        // Calculate D0(4) for mean reversion target (FSRS-5/6 uses D0(4) instead of D0(3))
+        double d0_easy = CalculateInitialDifficulty(FsrsConstants.GradeEasy, parameters);
+        
+        // Apply mean reversion towards D0(4)
+        // Formula: D'' = w7 * D0(4) + (1 - w7) * D'
+        nextDifficulty = parameters.Weights[7] * d0_easy + 
                         (1 - parameters.Weights[7]) * nextDifficulty;
 
         // Clamp to valid range [1, 10]
@@ -179,8 +197,9 @@ public static class FsrsAlgorithm
 
     /// <summary>
     /// Calculates stability for short-term (same-day) reviews
-    /// Formula: S' = S * e^(w17 * (G - 3 + w18))
-    /// With additional check that Good/Easy cannot decrease stability
+    /// FSRS-6 Formula: S' = S * e^(w17 * (G - 3 + w18)) * S^(-w19)
+    /// Stability increases faster when it's small and slower when it's large.
+    /// S will converge when SInc = e^(w17 * (G - 3 + w18)) * S^(-w19) = 1
     /// </summary>
     /// <param name="currentStability">Current memory stability</param>
     /// <param name="grade">Review grade (1=Again, 2=Hard, 3=Good, 4=Easy)</param>
@@ -191,12 +210,12 @@ public static class FsrsAlgorithm
         int grade,
         FsrsParameters parameters)
     {
-        // Formula: S' = S * e^(w17 * (G - 3 + w18))
-        // w19 dampens the effect for higher stability values
-        double exponent = parameters.Weights[17] * (grade - 3 + parameters.Weights[18]);
-        double newStability = currentStability * Math.Exp(exponent / (1 + parameters.Weights[19] * currentStability));
+        // FSRS-6 Formula: S' = S * e^(w17 * (G - 3 + w18)) * S^(-w19)
+        double stabilityIncrease = Math.Exp(parameters.Weights[17] * (grade - 3 + parameters.Weights[18])) * 
+                                   Math.Pow(currentStability, -parameters.Weights[19]);
+        double newStability = currentStability * stabilityIncrease;
 
-        // Good and Easy (G >= 3) cannot decrease stability
+        // Good and Easy (G >= 3) should ensure SInc >= 1 (stability doesn't decrease)
         if (grade >= 3)
         {
             return Math.Max(currentStability, newStability);
