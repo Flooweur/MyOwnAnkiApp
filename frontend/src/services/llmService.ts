@@ -1,3 +1,5 @@
+import { ERROR_MESSAGES } from '../constants/messages';
+
 /**
  * LLM Service for reformulating flashcard questions
  */
@@ -7,7 +9,6 @@ interface LLMConfig {
   modelName: string;
   apiKey: string;
 }
-
 
 /**
  * Gets LLM configuration from localStorage
@@ -98,7 +99,7 @@ export const compareAnswer = async (
   
   if (!config) {
     console.log('[LLM] No LLM config found');
-    return 'Unable to evaluate your answer at this time.';
+    return ERROR_MESSAGES.AI_EVALUATION_UNAVAILABLE;
   }
 
   try {
@@ -126,17 +127,17 @@ export const compareAnswer = async (
 
     if (!response.ok) {
       console.error('[LLM] Backend proxy error:', response.statusText);
-      return 'Unable to evaluate your answer at this time.';
+      return ERROR_MESSAGES.AI_EVALUATION_UNAVAILABLE;
     }
 
     const data = await response.json();
     console.log('[LLM] Response data:', data);
 
-    const feedback = data.feedback || 'Unable to evaluate your answer at this time.';
+    const feedback = data.feedback || ERROR_MESSAGES.AI_EVALUATION_UNAVAILABLE;
     console.log('[LLM] Final feedback:', feedback.trim());
     return feedback.trim();
   } catch (error) {
     console.error('[LLM] Error comparing answer:', error);
-    return 'Unable to evaluate your answer at this time.';
+    return ERROR_MESSAGES.AI_EVALUATION_UNAVAILABLE;
   }
 };

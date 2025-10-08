@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 import './Settings.css';
 
 interface SettingsProps {
@@ -10,29 +11,12 @@ interface SettingsProps {
  * Settings modal for LLM configuration
  */
 const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
-  const [endpoint, setEndpoint] = useState('');
-  const [modelName, setModelName] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [aiAugmentedEnabled, setAiAugmentedEnabled] = useState(false);
-
-  // Load settings from localStorage on mount
-  useEffect(() => {
-    const savedEndpoint = localStorage.getItem('llm_endpoint') || '';
-    const savedModelName = localStorage.getItem('llm_model_name') || '';
-    const savedApiKey = localStorage.getItem('llm_api_key') || '';
-    const savedAiAugmented = localStorage.getItem('ai_augmented_enabled') === 'true';
-    
-    setEndpoint(savedEndpoint);
-    setModelName(savedModelName);
-    setApiKey(savedApiKey);
-    setAiAugmentedEnabled(savedAiAugmented);
-  }, []);
+  const [endpoint, setEndpoint] = useLocalStorage('llm_endpoint', '');
+  const [modelName, setModelName] = useLocalStorage('llm_model_name', '');
+  const [apiKey, setApiKey] = useLocalStorage('llm_api_key', '');
+  const [aiAugmentedEnabled, setAiAugmentedEnabled] = useLocalStorage('ai_augmented_enabled', false);
 
   const handleSave = () => {
-    localStorage.setItem('llm_endpoint', endpoint);
-    localStorage.setItem('llm_model_name', modelName);
-    localStorage.setItem('llm_api_key', apiKey);
-    localStorage.setItem('ai_augmented_enabled', aiAugmentedEnabled.toString());
     onClose();
   };
 
@@ -41,10 +25,6 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
     setModelName('');
     setApiKey('');
     setAiAugmentedEnabled(false);
-    localStorage.removeItem('llm_endpoint');
-    localStorage.removeItem('llm_model_name');
-    localStorage.removeItem('llm_api_key');
-    localStorage.removeItem('ai_augmented_enabled');
   };
 
   if (!isOpen) return null;

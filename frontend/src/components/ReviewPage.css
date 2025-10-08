@@ -253,6 +253,84 @@
   margin-bottom: 1rem;
 }
 
+/* Markdown styling in feedback */
+.feedback-content p {
+  margin-bottom: 0.75rem;
+}
+
+.feedback-content p:last-child {
+  margin-bottom: 0;
+}
+
+.feedback-content ul,
+.feedback-content ol {
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.feedback-content li {
+  margin-bottom: 0.25rem;
+}
+
+.feedback-content code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.feedback-content pre {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+}
+
+.feedback-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.feedback-content strong {
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.feedback-content em {
+  font-style: italic;
+}
+
+.feedback-content blockquote {
+  border-left: 3px solid var(--accent-primary);
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-bottom: 0.75rem;
+  opacity: 0.9;
+}
+
+.feedback-content h1,
+.feedback-content h2,
+.feedback-content h3,
+.feedback-content h4,
+.feedback-content h5,
+.feedback-content h6 {
+  margin-bottom: 0.5rem;
+  margin-top: 1rem;
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.feedback-content h1:first-child,
+.feedback-content h2:first-child,
+.feedback-content h3:first-child,
+.feedback-content h4:first-child,
+.feedback-content h5:first-child,
+.feedback-content h6:first-child {
+  margin-top: 0;
+}
+
 .reveal-answer-button {
   background: var(--accent-gradient);
   color: white;

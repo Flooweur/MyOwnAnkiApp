@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { DeckWithStats, Card, ReviewResponse, NextCardResponse, DailyStats, RetentionStats, DeckOverviewStats } from './types';
+import { DeckWithStats, ReviewResponse, NextCardResponse, DailyStats, RetentionStats, DeckOverviewStats } from './types';
 
 // API base URL - will use proxy in development
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';

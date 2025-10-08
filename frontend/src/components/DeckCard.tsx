@@ -1,5 +1,6 @@
 import React from 'react';
 import { DeckWithStats } from '../types';
+import { formatDate } from '../utils/dateFormatter';
 import './DeckCard.css';
 
 interface DeckCardProps {
@@ -27,14 +28,6 @@ const DeckCard: React.FC<DeckCardProps> = ({ deck, onClick, onDelete, onViewStat
   const handleStatsClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     onViewStats();
-  };
-
-  /**
-   * Formats date to a readable string
-   */
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
   };
 
   return (
