@@ -110,6 +110,9 @@ namespace FlashcardApi.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasDefaultValue("[]");
 
+                    b.Property<string>("MediaDirectory")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)

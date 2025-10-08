@@ -42,4 +42,9 @@ public class Deck
     /// FSRS parameters for this deck (stored as JSON)
     /// </summary>
     public string FsrsParameters { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Directory path for media files associated with this deck
+    /// </summary>
+    public string? MediaDirectory { get; set; }
 }

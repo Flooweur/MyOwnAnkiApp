@@ -19,12 +19,23 @@ public class ApkgParserService : IApkgParserService
     private readonly FlashcardDbContext _context;
     private readonly IDeckService _deckService;
     private readonly ILogger<ApkgParserService> _logger;
+    private readonly string _mediaBasePath;
 
     public ApkgParserService(FlashcardDbContext context, IDeckService deckService, ILogger<ApkgParserService> logger)
     {
         _context = context;
         _deckService = deckService;
         _logger = logger;
+        
+        // Set up media storage path
+        _mediaBasePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "media");
+        
+        // Ensure media directory exists
+        if (!Directory.Exists(_mediaBasePath))
+        {
+            Directory.CreateDirectory(_mediaBasePath);
+            _logger.LogInformation("Created media directory at: {MediaBasePath}", _mediaBasePath);
+        }
     }
 
     /// <summary>
@@ -46,6 +57,18 @@ public class ApkgParserService : IApkgParserService
             
         _logger.LogInformation("Creating deck '{DeckName}' in database", deckName);
         var deck = await _deckService.CreateDeckAsync(deckName, parsedDeck.Description);
+        
+        // Update deck with media directory if it has media
+        if (!string.IsNullOrEmpty(parsedDeck.MediaDirectory))
+        {
+            var existingDeck = await _context.Decks.FindAsync(deck.Id);
+            if (existingDeck != null)
+            {
+                existingDeck.MediaDirectory = Path.GetFileName(parsedDeck.MediaDirectory);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Set media directory for deck {DeckId}: {MediaDir}", deck.Id, existingDeck.MediaDirectory);
+            }
+        }
 
         // Import all cards
         _logger.LogInformation("Importing {CardCount} cards to deck {DeckId}", parsedDeck.Cards.Count, deck.Id);
@@ -56,8 +79,8 @@ public class ApkgParserService : IApkgParserService
             var card = new Card
             {
                 DeckId = deck.Id,
-                Front = CleanHtml(parsedCard.Front),
-                Back = CleanHtml(parsedCard.Back),
+                Front = ProcessMediaReferences(CleanHtml(parsedCard.Front), parsedDeck.MediaDirectory),
+                Back = ProcessMediaReferences(CleanHtml(parsedCard.Back), parsedDeck.MediaDirectory),
                 State = CardState.New,
                 Stability = 0,
                 Difficulty = 5,
@@ -117,6 +140,20 @@ public class ApkgParserService : IApkgParserService
                 archive.ExtractToDirectory(tempDir);
             }
 
+            // Parse media mapping
+            var mediaMapping = await ParseMediaMappingAsync(tempDir);
+            parsedDeck.MediaMapping = mediaMapping;
+            
+            // Extract media files to deck-specific directory
+            var deckMediaDir = Path.Combine(_mediaBasePath, Guid.NewGuid().ToString());
+            parsedDeck.MediaDirectory = deckMediaDir;
+            
+            if (mediaMapping.Count > 0)
+            {
+                Directory.CreateDirectory(deckMediaDir);
+                await ExtractMediaFilesAsync(tempDir, deckMediaDir, mediaMapping);
+            }
+
             // Find and parse the collection database
             var dbPath = Path.Combine(tempDir, "collection.anki21");
             if (!File.Exists(dbPath))
@@ -132,7 +169,7 @@ public class ApkgParserService : IApkgParserService
                 var fileInfo = new FileInfo(dbPath);
                 _logger.LogInformation("Database file size: {FileSize} bytes", fileInfo.Length);
                 
-                parsedDeck = await ParseAnki2DatabaseAsync(dbPath);
+                parsedDeck = await ParseAnki2DatabaseAsync(dbPath, parsedDeck);
             }
             else
             {
@@ -159,13 +196,87 @@ public class ApkgParserService : IApkgParserService
     }
 
     /// <summary>
+    /// Parses the media mapping file from the .apkg archive
+    /// </summary>
+    private async Task<Dictionary<string, string>> ParseMediaMappingAsync(string tempDir)
+    {
+        var mediaMapping = new Dictionary<string, string>();
+        var mediaFilePath = Path.Combine(tempDir, "media");
+        
+        if (!File.Exists(mediaFilePath))
+        {
+            _logger.LogInformation("No media file found in APKG archive");
+            return mediaMapping;
+        }
+        
+        try
+        {
+            var mediaJson = await File.ReadAllTextAsync(mediaFilePath);
+            var mapping = JsonDocument.Parse(mediaJson);
+            
+            foreach (var item in mapping.RootElement.EnumerateObject())
+            {
+                mediaMapping[item.Name] = item.Value.GetString() ?? "";
+                _logger.LogDebug("Media mapping: {Key} -> {Value}", item.Name, item.Value.GetString());
+            }
+            
+            _logger.LogInformation("Parsed {MediaCount} media files from mapping", mediaMapping.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error parsing media mapping file");
+        }
+        
+        return mediaMapping;
+    }
+    
+    /// <summary>
+    /// Extracts media files from temp directory to deck media directory
+    /// </summary>
+    private async Task ExtractMediaFilesAsync(string tempDir, string deckMediaDir, Dictionary<string, string> mediaMapping)
+    {
+        _logger.LogInformation("Extracting {MediaCount} media files to {DeckMediaDir}", mediaMapping.Count, deckMediaDir);
+        
+        int extractedCount = 0;
+        foreach (var mapping in mediaMapping)
+        {
+            var sourceFile = Path.Combine(tempDir, mapping.Key);
+            var targetFile = Path.Combine(deckMediaDir, mapping.Value);
+            
+            if (File.Exists(sourceFile))
+            {
+                try
+                {
+                    await Task.Run(() => File.Copy(sourceFile, targetFile, true));
+                    extractedCount++;
+                    _logger.LogDebug("Extracted media file: {Key} -> {FileName}", mapping.Key, mapping.Value);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error extracting media file: {FileName}", mapping.Value);
+                }
+            }
+            else
+            {
+                _logger.LogWarning("Media file not found in archive: {Key}", mapping.Key);
+            }
+        }
+        
+        _logger.LogInformation("Extracted {ExtractedCount} media files successfully", extractedCount);
+    }
+    
+    /// <summary>
     /// Parses the Anki SQLite database to extract deck and card information
     /// </summary>
-    private async Task<ParsedDeck> ParseAnki2DatabaseAsync(string dbPath)
+    private async Task<ParsedDeck> ParseAnki2DatabaseAsync(string dbPath, ParsedDeck parsedDeck = null)
     {
         _logger.LogInformation("Starting Anki database parsing from: {DbPath}", dbPath);
         
-        var parsedDeck = new ParsedDeck();
+        if (parsedDeck == null)
+        {
+            parsedDeck = new ParsedDeck();
+        }
+        
         var cards = new List<ParsedCard>();
 
         // Open SQLite database
@@ -830,6 +941,37 @@ public class ApkgParserService : IApkgParserService
     }
 
     /// <summary>
+    /// Processes media references in card content to use correct paths
+    /// </summary>
+    private string ProcessMediaReferences(string content, string? mediaDirectory)
+    {
+        if (string.IsNullOrEmpty(content) || string.IsNullOrEmpty(mediaDirectory))
+            return content;
+        
+        var mediaDirName = Path.GetFileName(mediaDirectory);
+        
+        // Replace image src references
+        content = Regex.Replace(content, @"<img[^>]+src=[""']([^""']+)[""'][^>]*>", match =>
+        {
+            var imgTag = match.Value;
+            var src = match.Groups[1].Value;
+            var fileName = Path.GetFileName(src);
+            var newSrc = $"/media/{mediaDirName}/{fileName}";
+            return imgTag.Replace(src, newSrc);
+        }, RegexOptions.IgnoreCase);
+        
+        // Replace audio/sound src references
+        content = Regex.Replace(content, @"\[sound:([^\]]+)\]", match =>
+        {
+            var fileName = match.Groups[1].Value;
+            var audioPath = $"/media/{mediaDirName}/{fileName}";
+            return $"<audio controls><source src=\"{audioPath}\"></audio>";
+        }, RegexOptions.IgnoreCase);
+        
+        return content;
+    }
+    
+    /// <summary>
     /// Cleans HTML tags and formatting from Anki card content
     /// </summary>
     private string CleanHtml(string html)
@@ -837,16 +979,24 @@ public class ApkgParserService : IApkgParserService
         if (string.IsNullOrEmpty(html))
             return string.Empty;
 
+        // Don't remove HTML tags if they contain media references
+        if (html.Contains("<img") || html.Contains("[sound:"))
+        {
+            // Only decode HTML entities and trim
+            var cleaned = System.Net.WebUtility.HtmlDecode(html);
+            return cleaned.Trim();
+        }
+
         // Remove HTML tags but preserve line breaks
-        var cleaned = Regex.Replace(html, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
-        cleaned = Regex.Replace(cleaned, @"<[^>]+>", "");
+        var result = Regex.Replace(html, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+        result = Regex.Replace(result, @"<[^>]+>", "");
         
         // Decode HTML entities
-        cleaned = System.Net.WebUtility.HtmlDecode(cleaned);
+        result = System.Net.WebUtility.HtmlDecode(result);
         
         // Trim whitespace
-        cleaned = cleaned.Trim();
+        result = result.Trim();
 
-        return cleaned;
+        return result;
     }
 }
