@@ -13,22 +13,26 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
   const [endpoint, setEndpoint] = useState('');
   const [modelName, setModelName] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [aiAugmentedEnabled, setAiAugmentedEnabled] = useState(false);
 
   // Load settings from localStorage on mount
   useEffect(() => {
     const savedEndpoint = localStorage.getItem('llm_endpoint') || '';
     const savedModelName = localStorage.getItem('llm_model_name') || '';
     const savedApiKey = localStorage.getItem('llm_api_key') || '';
+    const savedAiAugmented = localStorage.getItem('ai_augmented_enabled') === 'true';
     
     setEndpoint(savedEndpoint);
     setModelName(savedModelName);
     setApiKey(savedApiKey);
+    setAiAugmentedEnabled(savedAiAugmented);
   }, []);
 
   const handleSave = () => {
     localStorage.setItem('llm_endpoint', endpoint);
     localStorage.setItem('llm_model_name', modelName);
     localStorage.setItem('llm_api_key', apiKey);
+    localStorage.setItem('ai_augmented_enabled', aiAugmentedEnabled.toString());
     onClose();
   };
 
@@ -36,9 +40,11 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
     setEndpoint('');
     setModelName('');
     setApiKey('');
+    setAiAugmentedEnabled(false);
     localStorage.removeItem('llm_endpoint');
     localStorage.removeItem('llm_model_name');
     localStorage.removeItem('llm_api_key');
+    localStorage.removeItem('ai_augmented_enabled');
   };
 
   if (!isOpen) return null;
@@ -52,6 +58,22 @@ const Settings: React.FC<SettingsProps> = ({ isOpen, onClose }) => {
         </div>
         
         <div className="settings-body">
+          <div className="settings-field settings-toggle">
+            <div className="toggle-label-group">
+              <label htmlFor="aiAugmented">AI Augmented Cards</label>
+              <p className="toggle-description">Reword questions using AI to reduce memorization</p>
+            </div>
+            <label className="toggle-switch">
+              <input
+                id="aiAugmented"
+                type="checkbox"
+                checked={aiAugmentedEnabled}
+                onChange={(e) => setAiAugmentedEnabled(e.target.checked)}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+
           <div className="settings-field">
             <label htmlFor="endpoint">API Endpoint</label>
             <input

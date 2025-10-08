@@ -34,13 +34,20 @@ const ReviewPage: React.FC = () => {
       setCurrentCard(response.card);
       setSchedulingIntervals(response.schedulingIntervals || {});
       
-      // Reformulate question using LLM if card exists
+      // Reformulate question using LLM if AI augmentation is enabled
       if (response.card) {
-        const reformulated = await reformulateQuestion(
-          response.card.front,
-          response.card.back
-        );
-        setDisplayQuestion(reformulated);
+        const aiAugmentedEnabled = localStorage.getItem('ai_augmented_enabled') === 'true';
+        
+        if (aiAugmentedEnabled) {
+          const reformulated = await reformulateQuestion(
+            response.card.front,
+            response.card.back
+          );
+          setDisplayQuestion(reformulated);
+        } else {
+          // Use original question if AI augmentation is disabled
+          setDisplayQuestion(response.card.front);
+        }
       }
     } catch (err) {
       console.error('Error loading next card:', err);
@@ -158,7 +165,7 @@ const ReviewPage: React.FC = () => {
       <div className="card-container">
         <div className={`cards-wrapper ${showAnswer ? 'showing-answer' : ''}`}>
           {/* Question card */}
-          <div className={`card-face card-question ${showAnswer ? 'slide-left' : ''}`} onClick={!showAnswer ? handleShowAnswer : undefined}>
+          <div className="card-face card-question" onClick={!showAnswer ? handleShowAnswer : undefined}>
             <div className="card-label">Question</div>
             <div className="card-content">
               {displayQuestion || currentCard.front}
@@ -167,7 +174,7 @@ const ReviewPage: React.FC = () => {
           </div>
 
           {/* Answer card */}
-          <div className={`card-face card-answer ${showAnswer ? 'slide-in' : ''}`}>
+          <div className="card-face card-answer">
             <div className="card-label">Answer</div>
             <div className="card-content">
               {currentCard.back}

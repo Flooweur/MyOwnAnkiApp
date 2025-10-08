@@ -7,9 +7,9 @@ namespace FlashcardApi.Services.FSRS;
 public class FsrsParameters
 {
     /// <summary>
-    /// Default FSRS parameters based on research data
+    /// Default FSRS-6 parameters based on research data
     /// w0-w3: Initial stability for Again, Hard, Good, Easy
-    /// w4: Default difficulty value
+    /// w4: Default difficulty value (D0(1) in FSRS-5/6)
     /// w5-w7: Difficulty adjustment weights
     /// w8-w14: Stability calculation weights
     /// w15-w16: Grade weights for Hard/Easy
@@ -19,40 +19,39 @@ public class FsrsParameters
     /// </summary>
     public double[] Weights { get; set; } = new double[]
     {
+        // FSRS-6 default parameters from official research
         // w0-w3: Initial stability values for each grade (Again, Hard, Good, Easy)
-        0.4,    // w0: Initial stability for "Again"
-        0.6,    // w1: Initial stability for "Hard"
-        2.4,    // w2: Initial stability for "Good"
-        5.8,    // w3: Initial stability for "Easy"
+        0.212,    // w0: Initial stability for "Again"
+        1.2931,   // w1: Initial stability for "Hard"
+        2.3065,   // w2: Initial stability for "Good"
+        8.2956,   // w3: Initial stability for "Easy"
         
-        // w4: Default difficulty (mid-point of 1-10 range)
-        4.93,   // w4: Default difficulty value
+        // w4-w7: Difficulty calculation weights
+        6.4133,   // w4: Initial difficulty D0(1) - difficulty when first rating is Again
+        0.8334,   // w5: Exponential factor in initial difficulty formula
+        3.0194,   // w6: Difficulty change rate
+        0.001,    // w7: Mean reversion weight for difficulty
         
-        // w5-w7: Difficulty calculation weights
-        0.94,   // w5: Difficulty weight for Again grade
-        0.86,   // w6: Difficulty weight for Hard grade
-        0.01,   // w7: Mean reversion weight for difficulty
-        
-        // w8-w14: Stability increase calculation weights
-        1.49,   // w8: Overall stability increase scale
-        0.14,   // w9: Difficulty impact on stability increase
-        0.94,   // w10: Stability saturation weight
-        2.18,   // w11: Post-lapse stability scale
-        0.05,   // w12: Post-lapse minimum stability
-        0.34,   // w13: Post-lapse difficulty exponent
-        1.26,   // w14: Post-lapse stability exponent
+        // w8-w14: Stability calculation weights
+        1.8722,   // w8: Overall stability increase scale
+        0.1666,   // w9: Stability saturation exponent
+        0.796,    // w10: Retrievability (spacing effect) weight
+        1.4835,   // w11: Post-lapse stability scale
+        0.0614,   // w12: Post-lapse difficulty exponent
+        0.2629,   // w13: Post-lapse stability exponent
+        1.6483,   // w14: Post-lapse retrievability weight
         
         // w15-w16: Grade-specific multipliers
-        0.29,   // w15: Hard grade multiplier (< 1)
-        2.61,   // w16: Easy grade multiplier (> 1)
+        0.6014,   // w15: Hard grade multiplier (< 1)
+        1.8729,   // w16: Easy grade multiplier (> 1)
         
-        // w17-w19: Short-term review parameters
-        0.5,    // w17: Short-term Hard/Again impact
-        1.5,    // w18: Short-term Good/Easy impact
-        0.5,    // w19: Short-term stability dampening
+        // w17-w19: Short-term (same-day) review parameters
+        0.5425,   // w17: Short-term stability change rate
+        0.0912,   // w18: Short-term grade offset
+        0.0658,   // w19: Short-term stability dampening exponent
         
-        // w20: Forgetting curve shape (personalized, typically 0.1-0.8)
-        0.2     // w20: Forgetting curve exponent
+        // w20: Forgetting curve shape parameter
+        0.1542    // w20: Forgetting curve decay exponent
     };
 
     /// <summary>

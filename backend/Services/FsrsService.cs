@@ -74,7 +74,7 @@ public class FsrsService : IFsrsService
         }
 
         // Calculate next review interval
-        double interval = FsrsAlgorithm.CalculateInterval(card.Stability, parameters.RequestRetention);
+        double interval = FsrsAlgorithm.CalculateInterval(card.Stability, parameters.RequestRetention, parameters.Weights[20]);
         
         // Apply fuzzing if enabled
         if (parameters.EnableFuzz)
@@ -184,7 +184,7 @@ public class FsrsService : IFsrsService
             }
 
             // Calculate next review interval
-            double interval = FsrsAlgorithm.CalculateInterval(stability, parameters.RequestRetention);
+            double interval = FsrsAlgorithm.CalculateInterval(stability, parameters.RequestRetention, parameters.Weights[20]);
             
             // Apply fuzzing if enabled
             if (parameters.EnableFuzz)
