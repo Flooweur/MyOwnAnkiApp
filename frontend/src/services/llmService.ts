@@ -80,3 +80,63 @@ export const reformulateQuestion = async (
     return originalQuestion;
   }
 };
+
+/**
+ * Compares user's answer with the correct answer and provides feedback
+ */
+export const compareAnswer = async (
+  question: string,
+  userAnswer: string,
+  correctAnswer: string
+): Promise<string> => {
+  console.log('[LLM] compareAnswer called');
+  console.log('[LLM] Question:', question);
+  console.log('[LLM] User Answer:', userAnswer);
+  console.log('[LLM] Correct Answer:', correctAnswer);
+
+  const config = getLLMConfig();
+  
+  if (!config) {
+    console.log('[LLM] No LLM config found');
+    return 'Unable to evaluate your answer at this time.';
+  }
+
+  try {
+    const requestBody = {
+      question,
+      userAnswer,
+      correctAnswer,
+      endpoint: config.endpoint,
+      modelName: config.modelName,
+      apiKey: config.apiKey
+    };
+
+    console.log('[LLM] Sending comparison request to backend proxy');
+    console.log('[LLM] Request body:', { ...requestBody, apiKey: '[REDACTED]' });
+
+    const response = await fetch('/api/llm/compare', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('[LLM] Response status:', response.status);
+
+    if (!response.ok) {
+      console.error('[LLM] Backend proxy error:', response.statusText);
+      return 'Unable to evaluate your answer at this time.';
+    }
+
+    const data = await response.json();
+    console.log('[LLM] Response data:', data);
+
+    const feedback = data.feedback || 'Unable to evaluate your answer at this time.';
+    console.log('[LLM] Final feedback:', feedback.trim());
+    return feedback.trim();
+  } catch (error) {
+    console.error('[LLM] Error comparing answer:', error);
+    return 'Unable to evaluate your answer at this time.';
+  }
+};

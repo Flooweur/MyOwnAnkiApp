@@ -20,4 +20,22 @@ public interface ILLMService
         string endpoint, 
         string modelName, 
         string apiKey);
+
+    /// <summary>
+    /// Compares user's answer with the correct answer and provides feedback
+    /// </summary>
+    /// <param name="question">The question that was asked</param>
+    /// <param name="userAnswer">The user's answer</param>
+    /// <param name="correctAnswer">The correct answer</param>
+    /// <param name="endpoint">The LLM API endpoint</param>
+    /// <param name="modelName">The model name to use</param>
+    /// <param name="apiKey">The API key for authentication</param>
+    /// <returns>Feedback on the user's answer</returns>
+    Task<string> CompareAnswerAsync(
+        string question,
+        string userAnswer,
+        string correctAnswer,
+        string endpoint,
+        string modelName,
+        string apiKey);
 }

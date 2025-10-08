@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiService from '../api';
 import { Card, ReviewGrade } from '../types';
-import { reformulateQuestion } from '../services/llmService';
+import { reformulateQuestion, compareAnswer } from '../services/llmService';
 import './ReviewPage.css';
 
 /**
@@ -19,6 +19,10 @@ const ReviewPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [schedulingIntervals, setSchedulingIntervals] = useState<{ [grade: string]: string }>({});
   const [displayQuestion, setDisplayQuestion] = useState<string>('');
+  const [showOriginalQuestion, setShowOriginalQuestion] = useState(false);
+  const [userAnswer, setUserAnswer] = useState<string>('');
+  const [answerFeedback, setAnswerFeedback] = useState<string | null>(null);
+  const [comparingAnswer, setComparingAnswer] = useState(false);
 
   /**
    * Loads the next card to review
@@ -30,6 +34,9 @@ const ReviewPage: React.FC = () => {
       setLoading(true);
       setError(null);
       setShowAnswer(false);
+      setShowOriginalQuestion(false);
+      setUserAnswer('');
+      setAnswerFeedback(null);
       const response = await apiService.getNextCard(parseInt(deckId));
       setCurrentCard(response.card);
       setSchedulingIntervals(response.schedulingIntervals || {});
@@ -67,6 +74,36 @@ const ReviewPage: React.FC = () => {
    */
   const handleShowAnswer = () => {
     setShowAnswer(true);
+  };
+
+  /**
+   * Handles toggling between original and reformulated question
+   */
+  const handleToggleOriginalQuestion = () => {
+    setShowOriginalQuestion(!showOriginalQuestion);
+  };
+
+  /**
+   * Handles submitting user's answer for comparison
+   */
+  const handleSubmitAnswer = async () => {
+    if (!currentCard || !userAnswer.trim()) return;
+
+    try {
+      setComparingAnswer(true);
+      setError(null);
+      const feedback = await compareAnswer(
+        displayQuestion,
+        userAnswer,
+        currentCard.back
+      );
+      setAnswerFeedback(feedback);
+    } catch (err) {
+      console.error('Error comparing answer:', err);
+      setError('Failed to compare answer. Please try again.');
+    } finally {
+      setComparingAnswer(false);
+    }
   };
 
   /**
@@ -165,12 +202,17 @@ const ReviewPage: React.FC = () => {
       <div className="card-container">
         <div className={`cards-wrapper ${showAnswer ? 'showing-answer' : ''}`}>
           {/* Question card */}
-          <div className="card-face card-question" onClick={!showAnswer ? handleShowAnswer : undefined}>
+          <div className="card-face card-question" onClick={!showAnswer && !localStorage.getItem('ai_augmented_enabled') ? handleShowAnswer : undefined}>
             <div className="card-label">Question</div>
             <div className="card-content">
-              {displayQuestion || currentCard.front}
+              {showOriginalQuestion ? currentCard.front : (displayQuestion || currentCard.front)}
             </div>
-            {!showAnswer && <div className="tap-hint">Tap to reveal answer</div>}
+            {localStorage.getItem('ai_augmented_enabled') === 'true' && displayQuestion !== currentCard.front && (
+              <button className="toggle-original-button" onClick={handleToggleOriginalQuestion}>
+                {showOriginalQuestion ? 'Show AI Version' : 'Show Original'}
+              </button>
+            )}
+            {!showAnswer && !localStorage.getItem('ai_augmented_enabled') && <div className="tap-hint">Tap to reveal answer</div>}
           </div>
 
           {/* Answer card */}
@@ -182,6 +224,37 @@ const ReviewPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Answer input box for AI augmented mode */}
+      {localStorage.getItem('ai_augmented_enabled') === 'true' && !showAnswer && (
+        <div className="answer-input-container">
+          <textarea
+            className="answer-input"
+            placeholder="Type your answer here..."
+            value={userAnswer}
+            onChange={(e) => setUserAnswer(e.target.value)}
+            disabled={comparingAnswer}
+          />
+          <button
+            className="submit-answer-button"
+            onClick={handleSubmitAnswer}
+            disabled={!userAnswer.trim() || comparingAnswer}
+          >
+            {comparingAnswer ? 'Checking...' : 'Submit Answer'}
+          </button>
+        </div>
+      )}
+
+      {/* Answer feedback */}
+      {answerFeedback && (
+        <div className="answer-feedback">
+          <div className="feedback-header">Feedback</div>
+          <div className="feedback-content">{answerFeedback}</div>
+          <button className="reveal-answer-button" onClick={handleShowAnswer}>
+            Reveal Answer Card
+          </button>
+        </div>
+      )}
 
       {/* Grade buttons (only show after revealing answer) */}
       {showAnswer && !reviewing && (
