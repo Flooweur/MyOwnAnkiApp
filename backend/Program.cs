@@ -29,6 +29,27 @@ builder.Services.AddScoped<IApkgParserService, ApkgParserService>();
 builder.Services.AddScoped<IDeckService, DeckService>();
 builder.Services.AddScoped<ICardService, CardService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
+builder.Services.AddScoped<ILLMService, LLMService>();
+
+// Register HttpClient for LLM service with SSL certificate handling
+builder.Services.AddHttpClient<ILLMService, LLMService>(client =>
+{
+    // Configure HttpClient settings
+    client.Timeout = TimeSpan.FromSeconds(30);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    
+    // Only ignore SSL certificate validation in development
+    if (builder.Environment.IsDevelopment())
+    {
+        handler.ServerCertificateCustomValidationCallback = 
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+    }
+    
+    return handler;
+});
 
 // Configure CORS to allow React frontend
 builder.Services.AddCors(options =>

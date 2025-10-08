@@ -8,15 +8,6 @@ interface LLMConfig {
   apiKey: string;
 }
 
-interface GenerateContentConfig {
-  system_instruction: string;
-}
-
-interface LLMRequest {
-  model: string;
-  config: GenerateContentConfig;
-  contents: string;
-}
 
 /**
  * Gets LLM configuration from localStorage
@@ -34,76 +25,58 @@ export const getLLMConfig = (): LLMConfig | null => {
 };
 
 /**
- * Reformulates a flashcard question using LLM
+ * Reformulates a flashcard question using LLM via backend proxy
  */
 export const reformulateQuestion = async (
   originalQuestion: string,
   originalAnswer: string
 ): Promise<string> => {
+  console.log('[LLM] reformulateQuestion called');
+  console.log('[LLM] Original Question:', originalQuestion);
+  console.log('[LLM] Original Answer:', originalAnswer);
+
   const config = getLLMConfig();
   
   if (!config) {
-    // If no LLM config, return original question
+    console.log('[LLM] No LLM config found, returning original question');
     return originalQuestion;
   }
 
   try {
-    const systemInstruction = `You are a flashcard question reformulator. Your task is to:
-1. Rephrase the question to make it less predictable and reduce memorization
-2. Add context or a realistic scenario when appropriate
-3. Keep the question testing the same knowledge
-4. Make it engaging and practical
-5. Keep the question concise and clear
-
-Original answer for context: ${originalAnswer}`;
-
-    const userPrompt = `Reformulate this flashcard question: "${originalQuestion}"
-
-Return ONLY the reformulated question, nothing else.`;
-
-    const requestBody: LLMRequest = {
-      model: config.modelName,
-      config: {
-        system_instruction: systemInstruction
-      },
-      contents: userPrompt
+    const requestBody = {
+      originalQuestion,
+      originalAnswer,
+      endpoint: config.endpoint,
+      modelName: config.modelName,
+      apiKey: config.apiKey
     };
 
-    const response = await fetch(config.endpoint, {
+    console.log('[LLM] Sending request to backend proxy');
+    console.log('[LLM] Request body:', { ...requestBody, apiKey: '[REDACTED]' });
+
+    const response = await fetch('/api/llm/reformulate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.apiKey}`,
       },
       body: JSON.stringify(requestBody),
     });
 
+    console.log('[LLM] Response status:', response.status);
+
     if (!response.ok) {
-      console.error('LLM API error:', response.statusText);
+      console.error('[LLM] Backend proxy error:', response.statusText);
       return originalQuestion;
     }
 
     const data = await response.json();
-    
-    // Try to extract the reformulated question from various response formats
-    let reformulatedQuestion = originalQuestion;
-    
-    if (data.text) {
-      reformulatedQuestion = data.text;
-    } else if (data.content) {
-      reformulatedQuestion = data.content;
-    } else if (data.response) {
-      reformulatedQuestion = data.response;
-    } else if (data.choices && data.choices[0]?.message?.content) {
-      reformulatedQuestion = data.choices[0].message.content;
-    } else if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-      // Google AI format
-      reformulatedQuestion = data.candidates[0].content.parts[0].text;
-    }
+    console.log('[LLM] Response data:', data);
 
+    const reformulatedQuestion = data.reformulatedQuestion || originalQuestion;
+    console.log('[LLM] Final reformulated question:', reformulatedQuestion.trim());
     return reformulatedQuestion.trim();
   } catch (error) {
-    console.error('Error reformulating question:', error);
+    console.error('[LLM] Error reformulating question:', error);
     return originalQuestion;
   }
 };
