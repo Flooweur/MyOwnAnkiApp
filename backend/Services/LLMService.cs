@@ -212,7 +212,7 @@ Return ONLY the reformulated question, nothing else.";
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error reformulating question with LLM");
+            _logger.LogError(ex, "Error reformulating question with LLM: " + ex.Message);
             return originalQuestion;
         }
     }
