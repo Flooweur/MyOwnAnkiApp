@@ -64,6 +64,29 @@ public class Card
     public CardState State { get; set; } = CardState.New;
 
     /// <summary>
+    /// Ease factor for SM-2 style interval calculation (typically 2.5 = 250%)
+    /// Used in Anki's classic scheduler alongside FSRS
+    /// </summary>
+    public double EaseFactor { get; set; } = 2.5;
+
+    /// <summary>
+    /// Current learning/relearning step index (for cards in Learning/Relearning state)
+    /// 0-based index into the learning steps array
+    /// </summary>
+    public int CurrentStep { get; set; } = 0;
+
+    /// <summary>
+    /// Scheduled interval in seconds (for cards in learning/relearning state)
+    /// Used for sub-day intervals
+    /// </summary>
+    public int ScheduledSeconds { get; set; } = 0;
+
+    /// <summary>
+    /// Elapsed seconds since card entered current state (for learning/relearning)
+    /// </summary>
+    public int ElapsedSeconds { get; set; } = 0;
+
+    /// <summary>
     /// Date when this card is due for next review
     /// </summary>
     public DateTime? DueDate { get; set; }
