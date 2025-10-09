@@ -35,11 +35,6 @@ namespace FlashcardApi.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CurrentStep")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
-
                     b.Property<int>("DeckId")
                         .HasColumnType("int");
 
@@ -50,16 +45,6 @@ namespace FlashcardApi.Migrations
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<double>("EaseFactor")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("float")
-                        .HasDefaultValue(2.5);
-
-                    b.Property<int>("ElapsedSeconds")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
 
                     b.Property<string>("Front")
                         .IsRequired()
@@ -79,11 +64,6 @@ namespace FlashcardApi.Migrations
                         .HasDefaultValue(1.0);
 
                     b.Property<int>("ReviewCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0);
-
-                    b.Property<int>("ScheduledSeconds")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
                         .HasDefaultValue(0);
