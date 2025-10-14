@@ -31,4 +31,9 @@ public interface ICardService
     /// Gets a random card from a deck
     /// </summary>
     Task<Card?> GetRandomCardAsync(int deckId);
+
+    /// <summary>
+    /// Deletes a card by ID
+    /// </summary>
+    Task<bool> DeleteCardAsync(int cardId);
 }

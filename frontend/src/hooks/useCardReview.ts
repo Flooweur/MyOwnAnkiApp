@@ -82,6 +82,29 @@ export function useCardReview(deckId: string | undefined) {
     setShowAnswer(true);
   }, []);
 
+  /**
+   * Deletes the current card and loads the next one
+   */
+  const deleteCardAndNext = useCallback(async () => {
+    if (!currentCard || reviewing) return;
+
+    try {
+      setReviewing(true);
+      setError(null);
+      await apiService.deleteCard(currentCard.id);
+
+      // Load next card after a brief delay for visual feedback
+      setTimeout(() => {
+        setReviewing(false);
+        loadNextCard();
+      }, 500);
+    } catch (err) {
+      console.error('Error deleting card:', err);
+      setError('Failed to delete card. Please try again.');
+      setReviewing(false);
+    }
+  }, [currentCard, reviewing, loadNextCard]);
+
   return {
     currentCard,
     showAnswer,
@@ -94,5 +117,6 @@ export function useCardReview(deckId: string | undefined) {
     loadNextCard,
     reviewCard,
     revealAnswer,
+    deleteCardAndNext,
   };
 }
