@@ -24,7 +24,6 @@ builder.Services.AddDbContext<FlashcardDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register application services
-builder.Services.AddScoped<IFsrsService, FsrsService>();
 builder.Services.AddScoped<IApkgParserService, ApkgParserService>();
 builder.Services.AddScoped<IDeckService, DeckService>();
 builder.Services.AddScoped<ICardService, CardService>();

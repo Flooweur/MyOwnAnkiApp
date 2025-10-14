@@ -20,75 +20,49 @@ public class CardsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets cards that are due for review in a specific deck
+    /// Gets all cards in a specific deck
     /// </summary>
     /// <param name="deckId">Deck ID</param>
-    /// <param name="limit">Maximum number of cards to return</param>
-    /// <returns>List of due cards</returns>
-    [HttpGet("due/{deckId}")]
-    public async Task<ActionResult> GetDueCards(int deckId, [FromQuery] int limit = 20)
+    /// <returns>List of all cards in the deck</returns>
+    [HttpGet("deck/{deckId}")]
+    public async Task<ActionResult> GetDeckCards(int deckId)
     {
         try
         {
-            var cards = await _cardService.GetDueCardsAsync(deckId, limit);
+            var cards = await _cardService.GetCardsAsync(deckId);
             return Ok(cards);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching due cards for deck {DeckId}", deckId);
-            return StatusCode(500, "An error occurred while fetching due cards");
+            _logger.LogError(ex, "Error fetching cards for deck {DeckId}", deckId);
+            return StatusCode(500, "An error occurred while fetching cards");
         }
     }
 
     /// <summary>
-    /// Gets the next card to review from a deck
+    /// Gets a random card from a deck
     /// </summary>
     /// <param name="deckId">Deck ID</param>
-    /// <returns>Next card to review, or null if no cards are due</returns>
-    [HttpGet("next/{deckId}")]
-    public async Task<ActionResult> GetNextCard(int deckId)
+    /// <returns>Random card from the deck, or null if no cards exist</returns>
+    [HttpGet("random/{deckId}")]
+    public async Task<ActionResult> GetRandomCard(int deckId)
     {
         try
         {
-            var card = await _cardService.GetNextCardToReviewAsync(deckId);
+            var card = await _cardService.GetRandomCardAsync(deckId);
             
             if (card == null)
-                return Ok(new { message = "No cards due for review", card = (object?)null, schedulingIntervals = (object?)null });
+                return Ok(new { message = "No cards in deck", card = (object?)null });
 
-            // Get scheduling intervals for all grades
-            var intervals = _cardService.GetSchedulingIntervals(card);
-            
-            // Format intervals for display
-            var schedulingIntervals = new Dictionary<string, string>();
-            foreach (var kvp in intervals)
-            {
-                schedulingIntervals[kvp.Key.ToString()] = FormatInterval(kvp.Value);
-            }
-
-            return Ok(new { message = "Card found", card, schedulingIntervals });
+            return Ok(new { message = "Random card found", card });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error fetching next card for deck {DeckId}", deckId);
-            return StatusCode(500, "An error occurred while fetching the next card");
+            _logger.LogError(ex, "Error fetching random card for deck {DeckId}", deckId);
+            return StatusCode(500, "An error occurred while fetching a random card");
         }
     }
 
-    /// <summary>
-    /// Formats a TimeSpan interval into a human-readable string
-    /// </summary>
-    private string FormatInterval(TimeSpan interval)
-    {
-        if (interval.TotalMinutes < 60)
-            return $"{(int)interval.TotalMinutes}m";
-        if (interval.TotalHours < 24)
-            return $"{(int)interval.TotalHours}h";
-        if (interval.TotalDays < 30)
-            return $"{(int)interval.TotalDays}d";
-        if (interval.TotalDays < 365)
-            return $"{(int)(interval.TotalDays / 30)}mo";
-        return $"{(int)(interval.TotalDays / 365)}y";
-    }
 
     /// <summary>
     /// Gets a specific card by ID
@@ -115,20 +89,19 @@ public class CardsController : ControllerBase
     }
 
     /// <summary>
-    /// Reviews a card with a grade and updates its schedule using FSRS
+    /// Records a card review
     /// </summary>
     /// <param name="id">Card ID</param>
     /// <param name="request">Review request containing the grade</param>
-    /// <returns>Updated card with new schedule</returns>
+    /// <returns>Updated card</returns>
     [HttpPost("{id}/review")]
     public async Task<ActionResult> ReviewCard(int id, [FromBody] ReviewCardRequest request)
     {
         try
         {
-            // Validate grade
-            if (request.Grade < Services.FSRS.FsrsConstants.MinGrade || 
-                request.Grade > Services.FSRS.FsrsConstants.MaxGrade)
-                return BadRequest($"Grade must be between {Services.FSRS.FsrsConstants.MinGrade} (Again) and {Services.FSRS.FsrsConstants.MaxGrade} (Easy)");
+            // Validate grade (1-4 for simplicity)
+            if (request.Grade < 1 || request.Grade > 4)
+                return BadRequest("Grade must be between 1 and 4");
 
             _logger.LogInformation("Reviewing card {CardId} with grade {Grade}", id, request.Grade);
 
@@ -137,7 +110,7 @@ public class CardsController : ControllerBase
             return Ok(new
             {
                 card = updatedCard,
-                message = GetGradeMessage(request.Grade)
+                message = "Card reviewed successfully"
             });
         }
         catch (InvalidOperationException ex)
@@ -152,17 +125,6 @@ public class CardsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Gets a user-friendly message for each grade
-    /// </summary>
-    private string GetGradeMessage(int grade) => grade switch
-    {
-        1 => "Don't worry, you'll get it next time!",
-        2 => "That was challenging, but you got it!",
-        3 => "Good job!",
-        4 => "Excellent! You know this well!",
-        _ => "Card reviewed"
-    };
 }
 
 /// <summary>

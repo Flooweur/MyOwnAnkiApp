@@ -2,14 +2,13 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { ReviewGrade } from '../types';
 import { useCardReview } from '../hooks/useCardReview';
 import { useAIAnswer } from '../hooks/useAIAnswer';
 import { UI_TEXT } from '../constants/messages';
 import './ReviewPage.css';
 
 /**
- * Review page for studying flashcards with FSRS scheduling
+ * Review page for studying flashcards with random card selection
  */
 const ReviewPage: React.FC = () => {
   const { deckId } = useParams<{ deckId: string }>();
@@ -22,7 +21,6 @@ const ReviewPage: React.FC = () => {
     loading,
     reviewing,
     error,
-    schedulingIntervals,
     displayQuestion,
     isAiEnabled,
     setError,
@@ -85,10 +83,10 @@ const ReviewPage: React.FC = () => {
   };
 
   /**
-   * Handles card review with a grade
+   * Handles card review and moves to next card
    */
-  const handleReview = (grade: ReviewGrade) => {
-    reviewCard(grade);
+  const handleReview = () => {
+    reviewCard();
   };
 
   /**
@@ -98,18 +96,6 @@ const ReviewPage: React.FC = () => {
     navigate('/');
   };
 
-  /**
-   * Gets button color based on grade
-   */
-  const getGradeButtonClass = (grade: ReviewGrade): string => {
-    const gradeClassMap = {
-      [ReviewGrade.Again]: 'grade-button grade-again',
-      [ReviewGrade.Hard]: 'grade-button grade-hard',
-      [ReviewGrade.Good]: 'grade-button grade-good',
-      [ReviewGrade.Easy]: 'grade-button grade-easy',
-    };
-    return gradeClassMap[grade] || 'grade-button';
-  };
 
   // Loading state
   if (loading) {
@@ -148,7 +134,6 @@ const ReviewPage: React.FC = () => {
         </button>
         <div className="card-stats">
           <span>Reviews: {currentCard.reviewCount}</span>
-          <span>Difficulty: {currentCard.difficulty > 0 ? (currentCard.difficulty / 10).toFixed(2) : 'N/A'}</span>
         </div>
       </div>
 
@@ -231,36 +216,11 @@ const ReviewPage: React.FC = () => {
         </div>
       )}
 
-      {/* Grade buttons (only show after revealing answer) */}
+      {/* Next card button (only show after revealing answer) */}
       {showAnswer && !reviewing && (
-        <div className="grade-buttons">
-          <button
-            className={getGradeButtonClass(ReviewGrade.Again)}
-            onClick={() => handleReview(ReviewGrade.Again)}
-          >
-            <span className="grade-label">Again</span>
-            <span className="grade-interval">{schedulingIntervals['1'] || '...'}</span>
-          </button>
-          <button
-            className={getGradeButtonClass(ReviewGrade.Hard)}
-            onClick={() => handleReview(ReviewGrade.Hard)}
-          >
-            <span className="grade-label">Hard</span>
-            <span className="grade-interval">{schedulingIntervals['2'] || '...'}</span>
-          </button>
-          <button
-            className={getGradeButtonClass(ReviewGrade.Good)}
-            onClick={() => handleReview(ReviewGrade.Good)}
-          >
-            <span className="grade-label">Good</span>
-            <span className="grade-interval">{schedulingIntervals['3'] || '...'}</span>
-          </button>
-          <button
-            className={getGradeButtonClass(ReviewGrade.Easy)}
-            onClick={() => handleReview(ReviewGrade.Easy)}
-          >
-            <span className="grade-label">Easy</span>
-            <span className="grade-interval">{schedulingIntervals['4'] || '...'}</span>
+        <div className="next-card-container">
+          <button className="next-card-button" onClick={handleReview}>
+            Next Card
           </button>
         </div>
       )}

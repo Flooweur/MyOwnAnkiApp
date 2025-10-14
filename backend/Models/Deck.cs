@@ -38,10 +38,6 @@ public class Deck
     [JsonIgnore]
     public virtual ICollection<Card> Cards { get; set; } = new List<Card>();
 
-    /// <summary>
-    /// FSRS parameters for this deck (stored as JSON)
-    /// </summary>
-    public string FsrsParameters { get; set; } = string.Empty;
     
     /// <summary>
     /// Directory path for media files associated with this deck
