@@ -377,87 +377,35 @@
   transform: translateY(0);
 }
 
-/* Grade buttons */
-.grade-buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+/* Next card button */
+.next-card-section {
+  display: flex;
+  justify-content: center;
   margin-top: 2rem;
 }
 
-.grade-button {
-  background: transparent;
-  border: 1px solid;
-  border-radius: 10px;
-  padding: 1.25rem 1rem;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  position: relative;
-}
-
-.grade-button:hover {
-  transform: translateY(-2px);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.grade-button:active {
-  transform: translateY(0);
-}
-
-.grade-label {
+.next-card-button {
+  background: var(--accent-gradient);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
   font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.grade-interval {
-  font-size: 0.85rem;
   font-weight: 600;
-  opacity: 0.9;
-  padding: 0.25rem 0.75rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  margin-top: 0.25rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 150px;
 }
 
-/* Grade button colors */
-.grade-again {
-  border-color: rgba(239, 68, 68, 0.4);
-  color: var(--color-again);
+.next-card-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
 }
 
-.grade-again:hover {
-  border-color: var(--color-again);
-}
-
-.grade-hard {
-  border-color: rgba(245, 158, 11, 0.4);
-  color: var(--color-hard);
-}
-
-.grade-hard:hover {
-  border-color: var(--color-hard);
-}
-
-.grade-good {
-  border-color: rgba(16, 185, 129, 0.4);
-  color: var(--color-good);
-}
-
-.grade-good:hover {
-  border-color: var(--color-good);
-}
-
-.grade-easy {
-  border-color: rgba(124, 58, 237, 0.4);
-  color: var(--color-easy);
-}
-
-.grade-easy:hover {
-  border-color: var(--color-easy);
+.next-card-button:active {
+  transform: translateY(0);
 }
 
 /* Completion state */
@@ -565,10 +513,6 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .grade-buttons {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .card-content {
     font-size: 1.25rem;
   }
@@ -603,6 +547,11 @@
   .answer-feedback {
     padding: 1rem;
   }
+
+  .next-card-button {
+    width: 100%;
+    max-width: 200px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -616,14 +565,6 @@
     padding: 0.375rem 0.75rem;
   }
 
-  .grade-buttons {
-    gap: 0.75rem;
-  }
-
-  .grade-button {
-    padding: 1.25rem 0.75rem;
-  }
-
   .card-content {
     font-size: 1.1rem;
   }
@@ -633,5 +574,10 @@
     min-width: 100%;
     min-height: 350px;
     padding: 1.5rem;
+  }
+
+  .next-card-button {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
   }
 }

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import apiService from '../api';
-import { Card, ReviewGrade } from '../types';
+import { Card } from '../types';
 import { reformulateQuestion } from '../services/llmService';
 
 /**
@@ -12,7 +12,6 @@ export function useCardReview(deckId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [schedulingIntervals, setSchedulingIntervals] = useState<{ [grade: string]: string }>({});
   const [displayQuestion, setDisplayQuestion] = useState<string>('');
   const [isAiEnabled, setIsAiEnabled] = useState(false);
 
@@ -29,7 +28,6 @@ export function useCardReview(deckId: string | undefined) {
 
       const response = await apiService.getNextCard(parseInt(deckId));
       setCurrentCard(response.card);
-      setSchedulingIntervals(response.schedulingIntervals || {});
 
       // Reformulate question using LLM if AI augmentation is enabled
       if (response.card) {
@@ -55,15 +53,15 @@ export function useCardReview(deckId: string | undefined) {
   }, [deckId]);
 
   /**
-   * Handles card review with a grade
+   * Handles card review (simplified - no grading)
    */
-  const reviewCard = useCallback(async (grade: ReviewGrade) => {
+  const reviewCard = useCallback(async () => {
     if (!currentCard || reviewing) return;
 
     try {
       setReviewing(true);
       setError(null);
-      await apiService.reviewCard(currentCard.id, grade);
+      await apiService.reviewCard(currentCard.id, 1); // Grade doesn't matter anymore
 
       // Load next card after a brief delay for visual feedback
       setTimeout(() => {
@@ -90,7 +88,6 @@ export function useCardReview(deckId: string | undefined) {
     loading,
     reviewing,
     error,
-    schedulingIntervals,
     displayQuestion,
     isAiEnabled,
     setError,

@@ -41,10 +41,10 @@ public class CardsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets the next card to review from a deck
+    /// Gets a random card from a deck for review
     /// </summary>
     /// <param name="deckId">Deck ID</param>
-    /// <returns>Next card to review, or null if no cards are due</returns>
+    /// <returns>Random card from the deck, or null if no cards exist</returns>
     [HttpGet("next/{deckId}")]
     public async Task<ActionResult> GetNextCard(int deckId)
     {
@@ -53,19 +53,9 @@ public class CardsController : ControllerBase
             var card = await _cardService.GetNextCardToReviewAsync(deckId);
             
             if (card == null)
-                return Ok(new { message = "No cards due for review", card = (object?)null, schedulingIntervals = (object?)null });
+                return Ok(new { message = "No cards available in this deck", card = (object?)null });
 
-            // Get scheduling intervals for all grades
-            var intervals = _cardService.GetSchedulingIntervals(card);
-            
-            // Format intervals for display
-            var schedulingIntervals = new Dictionary<string, string>();
-            foreach (var kvp in intervals)
-            {
-                schedulingIntervals[kvp.Key.ToString()] = FormatInterval(kvp.Value);
-            }
-
-            return Ok(new { message = "Card found", card, schedulingIntervals });
+            return Ok(new { message = "Card found", card });
         }
         catch (Exception ex)
         {
@@ -74,21 +64,6 @@ public class CardsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Formats a TimeSpan interval into a human-readable string
-    /// </summary>
-    private string FormatInterval(TimeSpan interval)
-    {
-        if (interval.TotalMinutes < 60)
-            return $"{(int)interval.TotalMinutes}m";
-        if (interval.TotalHours < 24)
-            return $"{(int)interval.TotalHours}h";
-        if (interval.TotalDays < 30)
-            return $"{(int)interval.TotalDays}d";
-        if (interval.TotalDays < 365)
-            return $"{(int)(interval.TotalDays / 30)}mo";
-        return $"{(int)(interval.TotalDays / 365)}y";
-    }
 
     /// <summary>
     /// Gets a specific card by ID
@@ -115,29 +90,24 @@ public class CardsController : ControllerBase
     }
 
     /// <summary>
-    /// Reviews a card with a grade and updates its schedule using FSRS
+    /// Reviews a card (simplified - no grading system)
     /// </summary>
     /// <param name="id">Card ID</param>
-    /// <param name="request">Review request containing the grade</param>
-    /// <returns>Updated card with new schedule</returns>
+    /// <param name="request">Review request (grade parameter ignored)</param>
+    /// <returns>Updated card</returns>
     [HttpPost("{id}/review")]
     public async Task<ActionResult> ReviewCard(int id, [FromBody] ReviewCardRequest request)
     {
         try
         {
-            // Validate grade
-            if (request.Grade < Services.FSRS.FsrsConstants.MinGrade || 
-                request.Grade > Services.FSRS.FsrsConstants.MaxGrade)
-                return BadRequest($"Grade must be between {Services.FSRS.FsrsConstants.MinGrade} (Again) and {Services.FSRS.FsrsConstants.MaxGrade} (Easy)");
+            _logger.LogInformation("Reviewing card {CardId}", id);
 
-            _logger.LogInformation("Reviewing card {CardId} with grade {Grade}", id, request.Grade);
-
-            var updatedCard = await _cardService.ReviewCardAsync(id, request.Grade);
+            var updatedCard = await _cardService.ReviewCardAsync(id, 1); // Grade doesn't matter anymore
 
             return Ok(new
             {
                 card = updatedCard,
-                message = GetGradeMessage(request.Grade)
+                message = "Card reviewed successfully"
             });
         }
         catch (InvalidOperationException ex)
@@ -152,17 +122,6 @@ public class CardsController : ControllerBase
         }
     }
 
-    /// <summary>
-    /// Gets a user-friendly message for each grade
-    /// </summary>
-    private string GetGradeMessage(int grade) => grade switch
-    {
-        1 => "Don't worry, you'll get it next time!",
-        2 => "That was challenging, but you got it!",
-        3 => "Good job!",
-        4 => "Excellent! You know this well!",
-        _ => "Card reviewed"
-    };
 }
 
 /// <summary>

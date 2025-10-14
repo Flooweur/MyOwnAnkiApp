@@ -29,10 +29,10 @@ export const UI_TEXT = {
   LOADING_STATS: 'Loading statistics...',
   UPLOADING: 'Uploading and importing deck...',
   CHECKING_ANSWER: 'Checking...',
-  SCHEDULING: 'Scheduling next review...',
+  LOADING_NEXT: 'Loading next card...',
   TAP_TO_REVEAL: 'Tap to reveal answer',
   NO_DECKS: 'No decks yet',
   NO_DECKS_DESCRIPTION: 'Upload an .apkg file to get started!',
   ALL_DONE: 'All done!',
-  NO_CARDS_DUE: 'No more cards due for review in this deck.',
+  NO_CARDS_AVAILABLE: 'No cards available in this deck.',
 } as const;
