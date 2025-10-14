@@ -81,12 +81,7 @@ public class ApkgParserService : IApkgParserService
                 DeckId = deck.Id,
                 Front = ProcessMediaReferences(CleanHtml(parsedCard.Front), parsedDeck.MediaDirectory),
                 Back = ProcessMediaReferences(CleanHtml(parsedCard.Back), parsedDeck.MediaDirectory),
-                State = CardState.New,
-                Stability = 0,
-                Difficulty = 5,
-                Retrievability = 1,
-                CreatedAt = DateTime.UtcNow,
-                DueDate = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Cards.Add(card);

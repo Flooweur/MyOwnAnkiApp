@@ -232,14 +232,16 @@ Return ONLY the reformulated question, nothing else.";
         {
             _logger.LogInformation("Comparing user answer with correct answer for question: {Question}", question);
 
+//5. Be encouraging and educational in your feedback
             // Compose the system instruction and user prompt
             var systemInstruction = @"You are a helpful flashcard tutor. Your task is to:
 1. Compare the user's answer with the correct answer
 2. Determine if the user's answer is correct, partially correct, or incorrect
 3. Provide constructive feedback
 4. Explain any errors or misconceptions
-5. Be encouraging and educational in your feedback
-6. Keep your response concise but informative (2-4 sentences)";
+5. If the answer is correct, be educational and very positive and encouraging in your feedback
+6. If the answer is incorrect, be mean, very harsh and critical in your feedback
+7. Keep your response concise but informative (2-4 sentences)";
 
             var userPrompt = $@"Question: ""{question}""
 
