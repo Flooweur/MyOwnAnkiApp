@@ -27,6 +27,7 @@ const ReviewPage: React.FC = () => {
     loadNextCard,
     reviewCard,
     revealAnswer,
+    deleteCardAndNext,
   } = useCardReview(deckId);
 
   const {
@@ -87,6 +88,13 @@ const ReviewPage: React.FC = () => {
    */
   const handleReview = () => {
     reviewCard();
+  };
+
+  /**
+   * Handles deleting the current card and moving to next card
+   */
+  const handleDeleteAndNext = () => {
+    deleteCardAndNext();
   };
 
   /**
@@ -216,11 +224,14 @@ const ReviewPage: React.FC = () => {
         </div>
       )}
 
-      {/* Next card button (only show after revealing answer) */}
+      {/* Next card buttons (only show after revealing answer) */}
       {showAnswer && !reviewing && (
         <div className="next-card-container">
           <button className="next-card-button" onClick={handleReview}>
             Next Card
+          </button>
+          <button className="next-delete-button" onClick={handleDeleteAndNext}>
+            Next and Delete
           </button>
         </div>
       )}

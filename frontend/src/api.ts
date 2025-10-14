@@ -63,6 +63,13 @@ export const apiService = {
   },
 
   /**
+   * Deletes a card
+   */
+  async deleteCard(cardId: number): Promise<void> {
+    await api.delete(`/cards/${cardId}`);
+  },
+
+  /**
    * Gets daily statistics for a deck
    */
   async getDailyStats(deckId: number, days: number = 30): Promise<DailyStats[]> {

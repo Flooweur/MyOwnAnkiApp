@@ -125,6 +125,32 @@ public class CardsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Deletes a card
+    /// </summary>
+    /// <param name="id">Card ID</param>
+    /// <returns>Success status</returns>
+    [HttpDelete("{id}")]
+    public async Task<ActionResult> DeleteCard(int id)
+    {
+        try
+        {
+            _logger.LogInformation("Deleting card {CardId}", id);
+
+            var deleted = await _cardService.DeleteCardAsync(id);
+
+            if (!deleted)
+                return NotFound($"Card with ID {id} not found");
+
+            return Ok(new { message = "Card deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting card {CardId}", id);
+            return StatusCode(500, "An error occurred while deleting the card");
+        }
+    }
+
 }
 
 /// <summary>

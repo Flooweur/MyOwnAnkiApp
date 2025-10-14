@@ -96,4 +96,25 @@ public class CardService : ICardService
         var randomIndex = random.Next(cards.Count);
         return cards[randomIndex];
     }
+
+    /// <summary>
+    /// Deletes a card by ID
+    /// </summary>
+    public async Task<bool> DeleteCardAsync(int cardId)
+    {
+        var card = await _context.Cards
+            .Include(c => c.Deck)
+            .FirstOrDefaultAsync(c => c.Id == cardId);
+
+        if (card == null)
+            return false;
+
+        _context.Cards.Remove(card);
+        
+        // Update deck's last modified time
+        card.Deck.UpdatedAt = DateTime.UtcNow;
+        
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }
