@@ -12,21 +12,6 @@ export interface DeckWithStats {
   createdAt: string;
   updatedAt: string;
   totalCards: number;
-  newCards: number;
-  learningCards: number;
-  reviewCards: number;
-  masteredCards: number;
-  dueToday: number;
-}
-
-/**
- * Card state enum
- */
-export enum CardState {
-  New = 0,
-  Learning = 1,
-  Review = 2,
-  Relearning = 3,
 }
 
 /**
@@ -37,25 +22,9 @@ export interface Card {
   deckId: number;
   front: string;
   back: string;
-  stability: number;
-  difficulty: number;
-  retrievability: number;
   reviewCount: number;
-  lapseCount: number;
-  state: CardState;
-  dueDate?: string;
   lastReviewedAt?: string;
   createdAt: string;
-}
-
-/**
- * Review grade options
- */
-export enum ReviewGrade {
-  Again = 1,
-  Hard = 2,
-  Good = 3,
-  Easy = 4,
 }
 
 /**
@@ -67,12 +36,11 @@ export interface ReviewResponse {
 }
 
 /**
- * API response for next card
+ * API response for random card
  */
 export interface NextCardResponse {
   message: string;
   card: Card | null;
-  schedulingIntervals?: { [grade: string]: string };
 }
 
 /**

@@ -45,10 +45,10 @@ export const apiService = {
   },
 
   /**
-   * Gets the next card to review from a deck
+   * Gets a random card from a deck
    */
-  async getNextCard(deckId: number): Promise<NextCardResponse> {
-    const response = await api.get<NextCardResponse>(`/cards/next/${deckId}`);
+  async getRandomCard(deckId: number): Promise<NextCardResponse> {
+    const response = await api.get<NextCardResponse>(`/cards/random/${deckId}`);
     return response.data;
   },
 

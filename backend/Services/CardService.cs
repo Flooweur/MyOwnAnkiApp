@@ -1,8 +1,6 @@
 using FlashcardApi.Data;
 using FlashcardApi.Models;
-using FlashcardApi.Services.FSRS;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace FlashcardApi.Services;
 
@@ -12,27 +10,19 @@ namespace FlashcardApi.Services;
 public class CardService : ICardService
 {
     private readonly FlashcardDbContext _context;
-    private readonly IFsrsService _fsrsService;
 
-    public CardService(FlashcardDbContext context, IFsrsService fsrsService)
+    public CardService(FlashcardDbContext context)
     {
         _context = context;
-        _fsrsService = fsrsService;
     }
 
     /// <summary>
-    /// Gets cards that are due for review, prioritizing by due date
+    /// Gets all cards from a deck
     /// </summary>
-    public async Task<List<Card>> GetDueCardsAsync(int deckId, int limit = 20)
+    public async Task<List<Card>> GetCardsAsync(int deckId)
     {
-        var now = DateTime.UtcNow;
-
         return await _context.Cards
-            .Where(c => c.DeckId == deckId && 
-                       (c.DueDate == null || c.DueDate <= now))
-            .OrderBy(c => c.DueDate ?? DateTime.MinValue)
-            .ThenBy(c => c.State) // Prioritize by state
-            .Take(limit)
+            .Where(c => c.DeckId == deckId)
             .ToListAsync();
     }
 
@@ -56,12 +46,7 @@ public class CardService : ICardService
             DeckId = deckId,
             Front = front,
             Back = back,
-            State = CardState.New,
-            Stability = 0,
-            Difficulty = 5, // Default difficulty
-            Retrievability = 1,
-            CreatedAt = DateTime.UtcNow,
-            DueDate = null // New cards have no due date until first review
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Cards.Add(card);
@@ -71,16 +56,10 @@ public class CardService : ICardService
     }
 
     /// <summary>
-    /// Reviews a card and updates its scheduling using FSRS
+    /// Records a card review (simplified - just updates review count and timestamp)
     /// </summary>
     public async Task<Card> ReviewCardAsync(int cardId, int grade)
     {
-        // Validate grade
-        if (grade < FSRS.FsrsConstants.MinGrade || grade > FSRS.FsrsConstants.MaxGrade)
-            throw new ArgumentException(
-                $"Grade must be between {FSRS.FsrsConstants.MinGrade} (Again) and {FSRS.FsrsConstants.MaxGrade} (Easy)", 
-                nameof(grade));
-
         var card = await _context.Cards
             .Include(c => c.Deck)
             .FirstOrDefaultAsync(c => c.Id == cardId);
@@ -88,56 +67,33 @@ public class CardService : ICardService
         if (card == null)
             throw new InvalidOperationException($"Card with ID {cardId} not found");
 
-        // Get FSRS parameters for this deck
-        var parameters = string.IsNullOrEmpty(card.Deck.FsrsParameters)
-            ? _fsrsService.GetDefaultParameters()
-            : JsonSerializer.Deserialize<FsrsParameters>(card.Deck.FsrsParameters) ?? _fsrsService.GetDefaultParameters();
-
-        // Process the review using FSRS
-        var (updatedCard, reviewLog) = _fsrsService.ReviewCard(card, grade, parameters);
+        // Simply update review count and timestamp
+        card.ReviewCount++;
+        card.LastReviewedAt = DateTime.UtcNow;
 
         // Update deck's last modified time
         card.Deck.UpdatedAt = DateTime.UtcNow;
-
-        // Save review log
-        _context.ReviewLogs.Add(reviewLog);
         
-        // Save all changes
+        // Save changes
         await _context.SaveChangesAsync();
 
-        return updatedCard;
+        return card;
     }
 
     /// <summary>
-    /// Gets the next card to review from a deck
-    /// Prioritizes: due cards > new cards, ordered by due date
+    /// Gets a random card from a deck
     /// </summary>
-    public async Task<Card?> GetNextCardToReviewAsync(int deckId)
+    public async Task<Card?> GetRandomCardAsync(int deckId)
     {
-        var now = DateTime.UtcNow;
+        var cards = await _context.Cards
+            .Where(c => c.DeckId == deckId)
+            .ToListAsync();
 
-        // First, try to get due cards (including new cards)
-        var nextCard = await _context.Cards
-            .Where(c => c.DeckId == deckId && 
-                       (c.DueDate == null || c.DueDate <= now))
-            .OrderBy(c => c.State == CardState.New ? 0 : 1) // New cards first
-            .ThenBy(c => c.DueDate ?? DateTime.MinValue) // Then by due date
-            .FirstOrDefaultAsync();
+        if (!cards.Any())
+            return null;
 
-        return nextCard;
-    }
-
-    /// <summary>
-    /// Gets scheduling intervals for all grades for a specific card
-    /// </summary>
-    public Dictionary<int, TimeSpan> GetSchedulingIntervals(Card card)
-    {
-        // Get FSRS parameters for this card's deck
-        var deck = _context.Decks.Find(card.DeckId);
-        var parameters = string.IsNullOrEmpty(deck?.FsrsParameters)
-            ? _fsrsService.GetDefaultParameters()
-            : JsonSerializer.Deserialize<FsrsParameters>(deck.FsrsParameters) ?? _fsrsService.GetDefaultParameters();
-
-        return _fsrsService.CalculateSchedulingIntervals(card, parameters);
+        var random = new Random();
+        var randomIndex = random.Next(cards.Count);
+        return cards[randomIndex];
     }
 }

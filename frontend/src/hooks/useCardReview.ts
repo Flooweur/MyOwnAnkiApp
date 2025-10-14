@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import apiService from '../api';
-import { Card, ReviewGrade } from '../types';
+import { Card } from '../types';
 import { reformulateQuestion } from '../services/llmService';
 
 /**
@@ -12,12 +12,11 @@ export function useCardReview(deckId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [schedulingIntervals, setSchedulingIntervals] = useState<{ [grade: string]: string }>({});
   const [displayQuestion, setDisplayQuestion] = useState<string>('');
   const [isAiEnabled, setIsAiEnabled] = useState(false);
 
   /**
-   * Loads the next card to review
+   * Loads a random card from the deck
    */
   const loadNextCard = useCallback(async () => {
     if (!deckId) return;
@@ -27,9 +26,8 @@ export function useCardReview(deckId: string | undefined) {
       setError(null);
       setShowAnswer(false);
 
-      const response = await apiService.getNextCard(parseInt(deckId));
+      const response = await apiService.getRandomCard(parseInt(deckId));
       setCurrentCard(response.card);
-      setSchedulingIntervals(response.schedulingIntervals || {});
 
       // Reformulate question using LLM if AI augmentation is enabled
       if (response.card) {
@@ -47,7 +45,7 @@ export function useCardReview(deckId: string | undefined) {
         }
       }
     } catch (err) {
-      console.error('Error loading next card:', err);
+      console.error('Error loading random card:', err);
       setError('Failed to load card. Please try again.');
     } finally {
       setLoading(false);
@@ -55,15 +53,15 @@ export function useCardReview(deckId: string | undefined) {
   }, [deckId]);
 
   /**
-   * Handles card review with a grade
+   * Records a card review and loads the next card
    */
-  const reviewCard = useCallback(async (grade: ReviewGrade) => {
+  const reviewCard = useCallback(async () => {
     if (!currentCard || reviewing) return;
 
     try {
       setReviewing(true);
       setError(null);
-      await apiService.reviewCard(currentCard.id, grade);
+      await apiService.reviewCard(currentCard.id, 3); // Default grade of 3 (Good)
 
       // Load next card after a brief delay for visual feedback
       setTimeout(() => {
@@ -90,7 +88,6 @@ export function useCardReview(deckId: string | undefined) {
     loading,
     reviewing,
     error,
-    schedulingIntervals,
     displayQuestion,
     isAiEnabled,
     setError,

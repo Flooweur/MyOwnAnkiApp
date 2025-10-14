@@ -17,7 +17,7 @@ function App() {
       <div className="App">
         <header className="App-header">
           <h1>🎴 Flashcard App</h1>
-          <p className="subtitle">Powered by FSRS-6 Algorithm</p>
+          <p className="subtitle">Random Card Selection</p>
           <button 
             className="settings-icon-button"
             onClick={() => setSettingsOpen(true)}
