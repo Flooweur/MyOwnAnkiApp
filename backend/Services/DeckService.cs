@@ -1,8 +1,6 @@
 using FlashcardApi.Data;
 using FlashcardApi.Models;
-using FlashcardApi.Services.FSRS;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace FlashcardApi.Services;
 
@@ -19,7 +17,7 @@ public class DeckService : IDeckService
     }
 
     /// <summary>
-    /// Gets all decks with calculated statistics
+    /// Gets all decks with simplified statistics
     /// </summary>
     public async Task<List<DeckWithStats>> GetAllDecksWithStatsAsync()
     {
@@ -27,8 +25,6 @@ public class DeckService : IDeckService
             .Include(d => d.Cards)
             .OrderByDescending(d => d.UpdatedAt)
             .ToListAsync();
-
-        var today = DateTime.UtcNow.Date;
 
         return decks.Select(deck => new DeckWithStats
         {
@@ -38,11 +34,11 @@ public class DeckService : IDeckService
             CreatedAt = deck.CreatedAt,
             UpdatedAt = deck.UpdatedAt,
             TotalCards = deck.Cards.Count,
-            NewCards = deck.Cards.Count(c => c.State == CardState.New),
-            LearningCards = deck.Cards.Count(c => c.State == CardState.Learning),
-            ReviewCards = deck.Cards.Count(c => c.State == CardState.Review),
-            MasteredCards = deck.Cards.Count(c => c.Stability > FSRS.FsrsConstants.MasteredStabilityThreshold),
-            DueToday = deck.Cards.Count(c => c.DueDate.HasValue && c.DueDate.Value.Date <= today)
+            NewCards = 0, // No longer relevant
+            LearningCards = 0, // No longer relevant
+            ReviewCards = 0, // No longer relevant
+            MasteredCards = 0, // No longer relevant
+            DueToday = 0 // No longer relevant
         }).ToList();
     }
 
@@ -57,19 +53,17 @@ public class DeckService : IDeckService
     }
 
     /// <summary>
-    /// Creates a new deck with default FSRS parameters
+    /// Creates a new deck
     /// </summary>
     public async Task<Deck> CreateDeckAsync(string name, string? description = null)
     {
-        var defaultParams = new FsrsParameters();
-        
         var deck = new Deck
         {
             Name = name,
             Description = description,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
-            FsrsParameters = JsonSerializer.Serialize(defaultParams)
+            FsrsParameters = null // No longer needed
         };
 
         _context.Decks.Add(deck);

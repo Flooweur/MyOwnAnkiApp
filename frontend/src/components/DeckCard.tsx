@@ -51,30 +51,7 @@ const DeckCard: React.FC<DeckCardProps> = ({ deck, onClick, onDelete, onViewStat
         <div className="stat-row">
           <div className="stat">
             <div className="stat-value">{deck.totalCards}</div>
-            <div className="stat-label">Total</div>
-          </div>
-          <div className="stat">
-            <div className="stat-value stat-new">{deck.newCards}</div>
-            <div className="stat-label">New</div>
-          </div>
-          <div className="stat">
-            <div className="stat-value stat-learning">{deck.learningCards}</div>
-            <div className="stat-label">Learning</div>
-          </div>
-        </div>
-
-        <div className="stat-row">
-          <div className="stat">
-            <div className="stat-value stat-review">{deck.reviewCards}</div>
-            <div className="stat-label">Review</div>
-          </div>
-          <div className="stat">
-            <div className="stat-value stat-mastered">{deck.masteredCards}</div>
-            <div className="stat-label">Mastered</div>
-          </div>
-          <div className="stat">
-            <div className="stat-value stat-due">{deck.dueToday}</div>
-            <div className="stat-label">Due</div>
+            <div className="stat-label">Total Cards</div>
           </div>
         </div>
       </div>
